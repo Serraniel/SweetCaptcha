@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SweetCaptcha demo</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--fg:#1c2230;--muted:#5a6475;--card:#fff;--line:#dde1e7;--accent:#2f6fde}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--fg:#e7eaf0;--muted:#9aa4b5;--card:#1b2029;--line:#2c333f;--accent:#7ba4f0}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+main{max-width:520px;margin:0 auto;padding:24px 16px}
+form{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:12px}
+label{display:grid;gap:4px}input[type=text]{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:inherit}
+button{font:inherit;padding:9px 14px;border:0;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer}
+nav{font-size:13px;color:var(--muted);margin-top:18px;line-height:2}nav a{color:var(--accent);margin-right:10px;white-space:nowrap}
+</style>
+<script src="{{SCRIPT}}" async defer></script>
+</head>
+<body><main>
+<h1>SweetCaptcha demo</h1>
+<p>Provider API: <strong>{{PROVIDER}}</strong></p>
+<form id="form" method="post" action="/demo/verify">
+<input type="hidden" name="k" value="{{KEY}}"><input type="hidden" name="provider" value="{{PROVIDER}}">
+<label>Your name<input id="name" type="text" name="name" autocomplete="off"></label>
+<div id="widget" class="{{CLASS}}" data-sitekey="{{KEY}}"></div>
+<button id="send">Send</button>
+</form>
+<nav>{{LINKS}}</nav>
+</main></body></html>

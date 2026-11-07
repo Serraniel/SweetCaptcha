@@ -1,0 +1,35 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule: {interval: weekly}
+    commit-message: {prefix: fix, include: scope}
+    groups:
+      go-dependencies: {patterns: ["*"]}
+  - package-ecosystem: npm
+    directories: [/web, /lab]
+    schedule: {interval: weekly}
+    commit-message: {prefix: chore, include: scope}
+    groups:
+      npm-dependencies: {patterns: ["*"]}
+  # Base images in the Dockerfile are pinned by digest.
+  - package-ecosystem: docker
+    directory: /
+    schedule: {interval: weekly}
+    commit-message: {prefix: fix, include: scope}
+    groups:
+      docker-images: {patterns: ["*"]}
+  # The Valkey image in the compose files is pinned by digest.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: {interval: weekly}
+    commit-message: {prefix: fix, include: scope}
+    groups:
+      compose-images: {patterns: ["*"]}
+  # Actions are pinned by commit SHA.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+    commit-message: {prefix: ci, include: scope}
+    groups:
+      actions: {patterns: ["*"]}

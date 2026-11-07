@@ -1,0 +1,21 @@
+version: "2"
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        # Puzzle geometry uses math/rand seeded from crypto/rand. It is not a key.
+        - G404
+  exclusions:
+    presets: [std-error-handling]
+    rules:
+      - path: _test\.go
+        linters: [gosec, bodyclose, revive]
+formatters:
+  enable: [gofmt]

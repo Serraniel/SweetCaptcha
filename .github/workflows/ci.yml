@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run typecheck
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - run: npm test
+        working-directory: web
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Formatting
+        run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go vet -tags strictonly ./...
+      - run: go test -race ./...
+      - run: go test -race -tags strictonly ./internal/server ./internal/config
+      - name: Strict build must not link detection code
+        run: |
+          if go list -tags strictonly -deps ./cmd/sweetcaptcha | grep -E 'SweetCaptcha/internal/(risk|tlsfp|ipdata|puzzle)$'; then
+            echo "strict build links detection code" >&2
+            exit 1
+          fi
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: No local paths in tracked files
+        run: scripts/check-local-paths.sh
+
+  lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund && npm run build
+        working-directory: web
+      - run: npm ci --no-audit --no-fund && npx playwright-core install --with-deps chromium
+        working-directory: lab
+      - run: npm run lab
+        working-directory: lab
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: lab-results
+          path: |
+            lab/out/results.md
+            lab/out/puzzle.png
+          if-no-files-found: ignore
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build standard image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: standard
+          load: true
+          tags: sweetcaptcha:ci
+      - name: Build strict image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: strict
+          load: true
+          tags: sweetcaptcha:ci-strict
+      - name: Strict image must not contain collectors or the risk engine
+        run: |
+          count=$(docker save sweetcaptcha:ci-strict | tar -xO --wildcards 'blobs/*' 2>/dev/null | grep -a -c -E 'hardwareConcurrency|__sweetcaptchaPage=|beh_click_no_approach' || true)
+          test "$count" = "0"
+      - name: Compose files are valid
+        run: |
+          scripts/init-env.sh
+          docker compose config -q
+          docker compose -f compose.strict.yaml config -q
+      - name: Generate SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          image: sweetcaptcha:ci
+          format: cyclonedx-json
+          artifact-name: sweetcaptcha-ci.cdx.json

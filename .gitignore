@@ -1,0 +1,26 @@
+# Secrets and local configuration
+.env
+config/*.yaml
+!config/*.example.yaml
+
+# Build output
+/sweetcaptcha
+/bin/
+node_modules/
+internal/assets/dist/core/*
+internal/assets/dist/signals/*
+!internal/assets/dist/core/.gitkeep
+!internal/assets/dist/signals/.gitkeep
+
+# Lab output
+lab/out/
+lab/*.pem
+
+# Research working folders: the curated copies live in docs/research/
+/research_notes/
+/reports/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store

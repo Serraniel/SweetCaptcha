@@ -1,0 +1,38 @@
+# SweetCaptcha configuration. ${VAR} references are read from the environment.
+# Generate keys with: docker compose run --rm sweetcaptcha keygen
+server:
+  listen: ":8080"
+  # Addresses of reverse proxies whose X-Forwarded-For header may be believed.
+  trusted_proxies: []
+  # Test pages at /demo/. Turn this off in production.
+  demo: true
+
+store:
+  type: valkey
+  url: redis://valkey:6379/0
+
+secret:
+  master_key: ${SWEETCAPTCHA_MASTER_KEY}
+
+admin:
+  # Read-only statistics at /admin/. Leave empty to disable.
+  token: ${SWEETCAPTCHA_ADMIN_TOKEN}
+
+ipdata:
+  dir: /data/ipdata
+
+sites:
+  - name: demo-standard
+    sitekey: sc_demo_standard
+    secret: ${SWEETCAPTCHA_DEMO_SECRET}
+    mode: standard
+    hostnames: [localhost, 127.0.0.1]
+    # Run with shadow: true first, to see what would be challenged. See docs/OPERATIONS.md.
+    policy:
+      shadow: false
+
+  - name: demo-strict
+    sitekey: sc_demo_strict
+    secret: ${SWEETCAPTCHA_DEMO_STRICT_SECRET}
+    mode: strict
+    hostnames: [localhost, 127.0.0.1]

@@ -1,0 +1,9 @@
+SweetCaptcha implements the JA4 TLS client fingerprint method.
+JA4 is copyright (c) 2023, FoxIO, LLC and is licensed under the BSD 3-Clause
+License: https://github.com/FoxIO-LLC/ja4
+
+The other JA4+ methods (JA4H, JA4T, JA4L and others) are under the FoxIO License,
+which restricts hosted use. They are not implemented here.
+
+SweetCaptcha is not affiliated with Google, hCaptcha, Cloudflare or FoxIO. Their
+product names appear only to describe API compatibility.

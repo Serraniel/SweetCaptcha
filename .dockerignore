@@ -1,0 +1,14 @@
+.git
+.github
+docs
+lab
+reports
+research_notes
+web/node_modules
+internal/assets/dist/core/*.js
+internal/assets/dist/core/*.css
+internal/assets/dist/core/manifest.json
+internal/assets/dist/signals/*.js
+internal/assets/dist/signals/manifest.json
+.env
+*.md

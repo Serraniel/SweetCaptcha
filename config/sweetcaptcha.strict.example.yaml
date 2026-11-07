@@ -1,0 +1,23 @@
+# Configuration for the strict-only image. Only mode: strict is accepted.
+server:
+  listen: ":8080"
+  trusted_proxies: []
+  # Test pages at /demo/. Turn this off in production.
+  demo: true
+
+store:
+  type: valkey
+  url: redis://valkey:6379/0
+
+secret:
+  master_key: ${SWEETCAPTCHA_MASTER_KEY}
+
+admin:
+  token: ${SWEETCAPTCHA_ADMIN_TOKEN}
+
+sites:
+  - name: demo-strict
+    sitekey: sc_demo_strict
+    secret: ${SWEETCAPTCHA_DEMO_STRICT_SECRET}
+    mode: strict
+    hostnames: [localhost, 127.0.0.1]

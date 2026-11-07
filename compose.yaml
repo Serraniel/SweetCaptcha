@@ -1,0 +1,79 @@
+# Standard stack: bot detection on the server, plus strict mode per site.
+# For the build that contains no detection code at all, use compose.strict.yaml.
+name: sweetcaptcha
+
+services:
+  sweetcaptcha:
+    image: sweetcaptcha:local
+    build:
+      context: .
+      target: standard
+    restart: unless-stopped
+    command: ["serve", "--config", "/etc/sweetcaptcha/config.yaml"]
+    ports:
+      - "${SWEETCAPTCHA_BIND:-127.0.0.1:8787}:8080"
+    environment:
+      SWEETCAPTCHA_MASTER_KEY: ${SWEETCAPTCHA_MASTER_KEY:?run scripts/init-env.sh first}
+      SWEETCAPTCHA_ADMIN_TOKEN: ${SWEETCAPTCHA_ADMIN_TOKEN:-}
+      SWEETCAPTCHA_DEMO_SECRET: ${SWEETCAPTCHA_DEMO_SECRET:?run scripts/init-env.sh first}
+      SWEETCAPTCHA_DEMO_STRICT_SECRET: ${SWEETCAPTCHA_DEMO_STRICT_SECRET:?run scripts/init-env.sh first}
+    volumes:
+      - ./config/sweetcaptcha.yaml:/etc/sweetcaptcha/config.yaml:ro
+      - ipdata:/data/ipdata:ro
+    depends_on:
+      valkey:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [public, backend]
+    healthcheck:
+      test: ["CMD", "/sweetcaptcha", "healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Valkey runs with persistence off: everything in it is short-lived. It sits on an
+  # internal network with no route to the internet.
+  valkey:
+    image: valkey/valkey:9-alpine@sha256:bf09d58e96d6b4524a15396b65b242bbe18beebbcc15a04d8ee75ddac62fae0b
+    restart: unless-stopped
+    command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-ttl"]
+    read_only: true
+    tmpfs: ["/data"]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID]
+    security_opt: ["no-new-privileges:true"]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Refreshes the local lists used to classify addresses. It is the only service
+  # that makes outbound requests. It downloads public files and sends no visitor
+  # data. Remove it to run fully offline: the "datacenter" rule then stays silent.
+  ipdata:
+    image: sweetcaptcha:local
+    build:
+      context: .
+      target: standard
+    restart: unless-stopped
+    command: ["ipdata", "--dir", "/data/ipdata", "--every", "24h"]
+    volumes:
+      - ipdata:/data/ipdata
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [egress]
+
+networks:
+  public: {}
+  egress: {}
+  backend:
+    internal: true
+
+volumes:
+  ipdata: {}

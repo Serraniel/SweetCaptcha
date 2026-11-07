@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SweetCaptcha admin</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--fg:#1c2230;--muted:#5a6475;--card:#fff;--line:#dde1e7;--accent:#2f6fde}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--fg:#e7eaf0;--muted:#9aa4b5;--card:#1b2029;--line:#2c333f;--accent:#7ba4f0}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+main{max-width:920px;margin:0 auto;padding:24px 16px}
+h1{font-size:22px;margin:0 0 16px}h2{font-size:17px;margin:0 0 4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0}
+.muted{color:var(--muted);font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-variant-numeric:tabular-nums}
+td{padding:3px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right}
+input,select,button{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+button{background:var(--accent);border-color:var(--accent);color:#fff;cursor:pointer}
+form{display:flex;gap:8px;flex-wrap:wrap}input{flex:1;min-width:180px}
+.err{color:#c43c3c}
+</style>
+</head>
+<body><main>
+<h1>SweetCaptcha</h1>
+<form id="f"><input id="t" type="password" placeholder="Admin token" autocomplete="off" aria-label="Admin token">
+<select id="d" aria-label="Period"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="35">35 days</option></select>
+<button>Load</button></form>
+<p class="err" id="e" role="alert"></p>
+<div id="o"></div>
+</main>
+<script>
+const el=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!==undefined)n.textContent=x;return n};
+document.getElementById('f').addEventListener('submit',async ev=>{ev.preventDefault();
+ const e=document.getElementById('e'),o=document.getElementById('o');e.textContent='';o.replaceChildren();
+ const r=await fetch('api/stats?days='+document.getElementById('d').value,{headers:{Authorization:'Bearer '+document.getElementById('t').value}});
+ if(!r.ok){e.textContent='Request failed: '+r.status;return}
+ for(const s of (await r.json()).sites){const c=el('section','card');c.append(el('h2','',s.name));
+  c.append(el('div','muted',s.mode+' mode'+(s.shadow?', shadow (not enforcing)':'')+' · '+s.summary.baseline_sessions+' baseline sessions'));
+  if(s.summary.suggested_step_up_above)c.append(el('p','muted','Suggested step_up_above for a '+(s.summary.target_challenge_rate*100)+'% challenge rate: '+s.summary.suggested_step_up_above+'. Advisory only.'));
+  const t=el('table');for(const [k,v] of Object.entries(s.summary.counters).filter(x=>!x[0].startsWith('hist_')).sort()){const tr=el('tr');tr.append(el('td','',k),el('td','',String(v)));t.append(tr)}
+  c.append(t);o.append(c)}
+});
+</script>
+</body></html>

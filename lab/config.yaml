@@ -1,0 +1,46 @@
+# Lab only. These keys are public test values and must never be used in production.
+server:
+  listen: "127.0.0.1:18080"
+  demo: true
+  tls:
+    listen: "127.0.0.1:18443"
+    cert_file: lab/out/cert.pem
+    key_file: lab/out/key.pem
+store:
+  type: memory
+secret:
+  master_key: "6c6162206f6e6c79206c6162206f6e6c79206c6162206f6e6c79206c6162206f"
+admin:
+  token: lab-admin-token
+sites:
+  - name: lab-standard
+    sitekey: lab_standard
+    secret: lab-standard-secret-value
+    mode: standard
+    hostnames: [localhost]
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+  - name: lab-strict
+    sitekey: lab_strict
+    secret: lab-strict-secret-value
+    mode: strict
+    hostnames: [localhost]
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+  # Forces a step-up, using scrypt, so the browser and server implementations are
+  # exercised against each other.
+  - name: lab-stepup
+    sitekey: lab_stepup
+    secret: lab-stepup-secret-value
+    mode: standard
+    hostnames: [localhost]
+    policy: {step_up_above: 0.001, puzzle_above: 0.999, deny_above: 0.9999}
+    pow: {step_up: {algo: scrypt, bits: 4, count: 2}}
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+  # Forces a puzzle, to exercise the interface and the wait path.
+  - name: lab-puzzle
+    sitekey: lab_puzzle
+    secret: lab-puzzle-secret-value
+    mode: standard
+    hostnames: [localhost]
+    policy: {step_up_above: 0.001, puzzle_above: 0.002, deny_above: 0.9999}
+    pow: {wait: {algo: sha256, bits: 14, count: 8}}
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
