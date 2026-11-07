@@ -3,6 +3,8 @@ package config
 import (
 	"strings"
 	"testing"
+
+	"github.com/Serraniel/SweetCaptcha/internal/edition"
 )
 
 const validKey = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -68,7 +70,11 @@ func TestExampleConfigsParse(t *testing.T) {
 		t.Setenv(name, "a-test-secret-that-is-long-enough-"+name)
 	}
 	t.Setenv("SWEETCAPTCHA_MASTER_KEY", validKey)
-	for _, path := range []string{"../../config/sweetcaptcha.example.yaml", "../../config/sweetcaptcha.strict.example.yaml"} {
+	paths := []string{"../../config/sweetcaptcha.strict.example.yaml"}
+	if !edition.StrictOnly {
+		paths = append(paths, "../../config/sweetcaptcha.example.yaml")
+	}
+	for _, path := range paths {
 		if _, err := Load(path); err != nil {
 			t.Errorf("%s: %v", path, err)
 		}

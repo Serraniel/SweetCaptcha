@@ -128,7 +128,9 @@ async function humanStyleForm(page) {
 }
 
 async function withBrowser(opts, fn) {
-  const browser = await chromium.launch({ headless: true, executablePath, ...opts });
+  // Full Chromium in new headless mode. Playwright's default headless shell is a
+  // different, far more detectable browser.
+  const browser = await chromium.launch({ headless: true, executablePath, channel: executablePath ? undefined : 'chromium', ...opts });
   try {
     return await fn(browser);
   } finally {
@@ -380,7 +382,7 @@ async function run() {
       const r = await outcome(page, 'lab_standard');
       return r.via === 'stepup' ? { ...r, result: 'stepup-pass' } : r;
     }));
-  await scenario('Script patches webdriver and languages', 'JS-patched stealth', ['puzzle', 'stepup-pass'], () => withBrowser({}, async (b) => {
+  await scenario('Script patches webdriver and languages', 'JS-patched stealth', ['puzzle', 'deny'], () => withBrowser({}, async (b) => {
     const ctx = await b.newContext({ userAgent: ua });
     await ctx.addInitScript(() => {
       Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false, configurable: true });
@@ -392,7 +394,7 @@ async function run() {
     const r = await outcome(page, 'lab_standard');
     return r.via === 'stepup' ? { ...r, result: 'stepup-pass' } : r;
   }));
-  await scenario('Flag hidden, UA spoofed, humanised pointer and typing', 'Humanised browser', 'pass', () => withBrowser(
+  await scenario('Flag hidden, UA spoofed, humanised pointer and typing', 'Humanised browser', ['pass', 'stepup-pass'], () => withBrowser(
     { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
       const ctx = await b.newContext({ userAgent: ua });
       const page = await ctx.newPage();

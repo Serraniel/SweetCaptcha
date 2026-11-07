@@ -19,6 +19,10 @@ updates:
     commit-message: {prefix: fix, include: scope}
     groups:
       docker-images: {patterns: ["*"]}
+    ignore:
+      # Stay on the LTS line, and move to the next one on purpose.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
   # The Valkey image in the compose files is pinned by digest.
   - package-ecosystem: docker-compose
     directory: /
