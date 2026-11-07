@@ -11,6 +11,7 @@ const siteKey = q.get('k') ?? '';
 const hostname = q.get('h') ?? '';
 const parentOrigin = q.get('o') ?? '';
 const t = strings(q.get('l') ?? '');
+const invisible = q.get('s') === 'invisible';
 const theme = q.get('t');
 if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
 if (q.get('s') === 'compact') document.body.classList.add('compact');
@@ -19,11 +20,13 @@ document.documentElement.lang = t === strings('de') ? 'de' : 'en';
 const root = document.getElementById('root')!;
 const workerUrl = document.documentElement.dataset.worker!;
 
-declare global {
-  interface Window {
-    __sweetcaptchaCollect?: (nonce: string, workerUrl: string, page: { behaviour: unknown; artefacts: unknown }) => Promise<unknown>;
-  }
+interface Collectors {
+  __sweetcaptchaCollect?: (nonce: string, workerUrl: string, page: { behaviour: unknown; artefacts: unknown }) => Promise<unknown>;
+  // Standard mode only: marks when the checkbox appears and describes how it was used.
+  __sweetcaptchaMark?: () => void;
+  __sweetcaptchaClick?: () => unknown;
 }
+const hooks = window as unknown as Collectors;
 
 function send(type: string, extra: Record<string, unknown> = {}): void {
   parent.postMessage({ sc: 1, type, ...extra }, parentOrigin);
@@ -36,16 +39,24 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
   return n;
 }
 
+function brandLine(): HTMLElement {
+  return el('div', 'brand', `${t.brand} ${document.documentElement.dataset.version ?? ''}`.trim());
+}
+
+function statusLine(message: string): HTMLElement {
+  const status = el('div', 'status', message);
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  return status;
+}
+
 function badge(state: 'busy' | 'ok' | 'bad', message: string, action?: { label: string; run: () => void }, link?: { label: string; href: string }): void {
   const box = el('div', 'badge');
   const icon = el('div', 'icon');
   if (state === 'busy') icon.append(el('div', 'spin'));
   else icon.append(el('div', state === 'ok' ? 'mark' : 'mark bad', state === 'ok' ? '✓' : '!'));
   const text = el('div', 'text');
-  const status = el('div', 'status', message);
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-live', 'polite');
-  text.append(status);
+  text.append(statusLine(message));
   if (action) {
     const b = el('button', 'link', action.label);
     b.type = 'button';
@@ -58,10 +69,23 @@ function badge(state: 'busy' | 'ok' | 'bad', message: string, action?: { label: 
     a.rel = 'noopener';
     text.append(a);
   } else {
-    text.append(el('div', 'brand', t.brand));
+    text.append(brandLine());
   }
   box.append(icon, text);
   root.replaceChildren(box);
+}
+
+// Shows a status with a progress bar. Proof of work reports progress per
+// sub-puzzle, so the bar moves in steps.
+function busyWithProgress(message: string): (v: number) => void {
+  badge('busy', message);
+  const bar = el('div', 'bar');
+  const fill = el('div');
+  bar.append(fill);
+  root.querySelector('.brand')?.replaceWith(bar);
+  return (v) => {
+    fill.style.width = `${Math.round(v * 100)}%`;
+  };
 }
 
 interface ChallengeReply {
@@ -85,7 +109,7 @@ interface PuzzlePublic {
 }
 
 interface SubmitReply {
-  status: 'pass' | 'stepup' | 'puzzle' | 'deny' | 'retry';
+  status: 'pass' | 'interact' | 'stepup' | 'puzzle' | 'deny' | 'retry';
   token?: string;
   ttl?: number;
   c?: string;
@@ -140,6 +164,12 @@ function loadScript(src: string, integrity: string): Promise<void> {
 
 let finishWaiter: ((m: HostMessage) => void) | null = null;
 let earlyFinish: HostMessage | null = null;
+// Set while the checkbox waits for a click, so that a form submit can prompt for it.
+let checkboxPrompt: (() => void) | null = null;
+// The open puzzle, kept so that closing the dialog does not throw it away.
+let openPuzzle: { reply: SubmitReply; expires: number } | null = null;
+let lastAction = '';
+let lastCData = '';
 
 function waitForFinish(): Promise<HostMessage> {
   if (earlyFinish) {
@@ -156,7 +186,9 @@ async function run(action: string, cdata: string): Promise<void> {
   const mine = ++generation;
   const stale = () => mine !== generation;
   earlyFinish = null;
-  badge('busy', t.verifying);
+  checkboxPrompt = null;
+  openPuzzle = null;
+  const showProgress = busyWithProgress(t.verifying);
   let reply: ChallengeReply;
   try {
     reply = await post<ChallengeReply>('/v1/challenge', { sitekey: siteKey, action, hostname, cdata });
@@ -174,20 +206,24 @@ async function run(action: string, cdata: string): Promise<void> {
   }
   let nonces: number[];
   try {
-    nonces = await solve(reply.pow);
+    nonces = await solve(reply.pow, showProgress);
   } catch {
     return showError('worker-failed');
   }
   if (stale()) return;
 
   let signals: unknown;
+  let user = invisible;
   if (reply.collect) {
+    // The host page decides when to finish: after the visitor's first input, or a
+    // short timeout. Waiting briefly lets the evidence include some interaction.
     send('pow-ready');
     const finish = await waitForFinish();
     if (stale()) return;
+    user = user || Boolean(finish.user);
     await collectorReady;
     try {
-      signals = await window.__sweetcaptchaCollect?.(reply.collect.nonce, reply.collect.worker, {
+      signals = await hooks.__sweetcaptchaCollect?.(reply.collect.nonce, reply.collect.worker, {
         behaviour: finish.behaviour,
         artefacts: finish.artefacts,
       });
@@ -202,10 +238,13 @@ async function run(action: string, cdata: string): Promise<void> {
   } catch {
     return showError('network-error');
   }
-  if (!stale()) await handle(result, action, cdata, mine);
+  if (!stale()) await handle(result, action, cdata, mine, user);
 }
 
 function pass(token: string, ttl: number): void {
+  checkboxPrompt = null;
+  openPuzzle = null;
+  send('overlay', { on: false });
   badge('ok', t.verified);
   send('token', { token, ttl });
 }
@@ -216,28 +255,31 @@ function showError(code: string): void {
   send('error', { code });
 }
 
-async function handle(r: SubmitReply, action: string, cdata: string, mine: number): Promise<void> {
+// user is true when the visitor's own action led here. A task opens only then;
+// otherwise the widget offers it, so that nothing takes focus while someone types.
+async function handle(r: SubmitReply, action: string, cdata: string, mine: number, user = false): Promise<void> {
   const stale = () => mine !== generation;
   switch (r.status) {
     case 'pass':
-      send('overlay', { on: false });
       return pass(r.token!, r.ttl ?? 300);
+    case 'interact':
+      return showCheckbox(r, action, cdata, mine);
     case 'stepup': {
-      const onProgress = progressView();
       let nonces: number[];
       try {
-        nonces = await solve(r.pow!, onProgress);
+        nonces = await solve(r.pow!, progressView());
       } catch {
         return showError('worker-failed');
       }
       if (stale()) return;
       const next = await post<SubmitReply>('/v1/submit', { c: r.c, nonces });
-      if (!stale()) await handle(next, action, cdata, mine);
+      if (!stale()) await handle(next, action, cdata, mine, user);
       return;
     }
     case 'puzzle':
-      send('overlay', { on: true });
-      return showPuzzle(r, action, cdata, mine);
+      openPuzzle = { reply: r, expires: new Date().getTime() + 4.5 * 60 * 1000 };
+      if (user) return showPuzzle(r, action, cdata, mine);
+      return offerTask(action, cdata, mine);
     case 'deny':
       send('overlay', { on: false });
       badge('bad', t.denied, undefined, r.support ? { label: t.contact, href: r.support } : undefined);
@@ -248,8 +290,55 @@ async function handle(r: SubmitReply, action: string, cdata: string, mine: numbe
   }
 }
 
-// While a step-up runs in a small widget, the badge shows a percentage. In the
-// wait fallback, the modal is open and shows a bar.
+// The checkbox appears when the evidence is unclear, including when there was no
+// interaction at all. The extra proof of work runs while it is shown.
+function showCheckbox(r: SubmitReply, action: string, cdata: string, mine: number): void {
+  const stale = () => mine !== generation;
+  const work = solve(r.pow!).catch(() => null);
+  const b = el('button', 'check');
+  b.type = 'button';
+  b.setAttribute('role', 'checkbox');
+  b.setAttribute('aria-checked', 'false');
+  const text = el('div', 'text');
+  text.append(el('div', 'status', t.checkbox), brandLine());
+  b.append(el('div', 'box'), text);
+  b.addEventListener('click', () => {
+    checkboxPrompt = null;
+    void (async () => {
+      const click = hooks.__sweetcaptchaClick?.();
+      busyWithProgress(t.verifying);
+      const nonces = await work;
+      if (stale()) return;
+      if (!nonces) return showError('worker-failed');
+      let next: SubmitReply;
+      try {
+        next = await post<SubmitReply>('/v1/submit', { c: r.c, nonces, click });
+      } catch {
+        return showError('network-error');
+      }
+      if (!stale()) await handle(next, action, cdata, mine, true);
+    })();
+  }, { once: true });
+  checkboxPrompt = () => {
+    if (!text.querySelector('.prompt')) {
+      const p = el('div', 'prompt', t.checkboxPrompt);
+      p.setAttribute('role', 'alert');
+      text.querySelector('.brand')?.replaceWith(p);
+    }
+    b.focus();
+  };
+  if (invisible) {
+    // An invisible widget has no place on the page, so the checkbox opens as a dialog.
+    const box = modalShell(() => dismiss(action, cdata, mine));
+    box.append(b);
+    send('overlay', { on: true });
+  } else {
+    root.replaceChildren(b);
+  }
+  hooks.__sweetcaptchaMark?.();
+}
+
+// A step-up shows its bar in the badge. The wait path shows one in the open dialog.
 let barTarget: HTMLElement | null = null;
 
 function progressView(): (v: number) => void {
@@ -259,17 +348,75 @@ function progressView(): (v: number) => void {
       b.style.width = `${Math.round(v * 100)}%`;
     };
   }
-  badge('busy', t.working);
-  return () => undefined;
+  return busyWithProgress(t.working);
+}
+
+// Builds the dialog used for tasks. A native dialog closes with Escape and keeps
+// focus inside, with no key listeners of our own.
+function modalShell(onClose: () => void): HTMLElement {
+  barTarget = null;
+  const dialog = el('dialog', 'modal');
+  const box = el('div');
+  box.style.display = 'grid';
+  box.style.gap = '12px';
+  const head = el('div', 'modal-head');
+  const heading = el('h1', '', t.puzzleTitle);
+  heading.tabIndex = -1;
+  const close = el('button', 'close', '×');
+  close.type = 'button';
+  close.setAttribute('aria-label', t.close);
+  close.addEventListener('click', onClose);
+  head.append(heading, close);
+  box.append(head);
+  dialog.append(box);
+  dialog.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    onClose();
+  });
+  root.replaceChildren(dialog);
+  dialog.showModal();
+  // Focus the heading rather than the first control, so that the task is read
+  // first and nothing scrolls out of view.
+  heading.focus({ preventScroll: true });
+  return box;
+}
+
+// Closing a task returns to the checkbox. Ticking it again reopens the same task
+// while it is still valid, so closing does not cost the visitor anything.
+function dismiss(action: string, cdata: string, mine: number): void {
+  send('overlay', { on: false, dismissed: true });
+  offerTask(action, cdata, mine);
+}
+
+// Shows the checkbox for a pending task. The task opens on a click, or when the
+// visitor sends the form.
+function offerTask(action: string, cdata: string, mine: number): void {
+  const b = el('button', 'check');
+  b.dataset.task = '1';
+  b.type = 'button';
+  b.setAttribute('role', 'checkbox');
+  b.setAttribute('aria-checked', 'false');
+  const text = el('div', 'text');
+  text.append(el('div', 'status', t.checkbox), brandLine());
+  b.append(el('div', 'box'), text);
+  const open = () => {
+    checkboxPrompt = null;
+    const keep = openPuzzle;
+    if (keep && keep.expires > new Date().getTime() && mine === generation) {
+      showPuzzle(keep.reply, action, cdata, mine);
+    } else {
+      void run(action, cdata);
+    }
+  };
+  b.addEventListener('click', open, { once: true });
+  checkboxPrompt = open;
+  root.replaceChildren(b);
 }
 
 function showPuzzle(r: SubmitReply, action: string, cdata: string, mine: number, note = ''): void {
-  barTarget = null;
+  send('overlay', { on: true });
   const p = r.puzzle!;
-  const box = el('div', 'modal');
-  const heading = el('h1', '', t.puzzleTitle);
-  heading.tabIndex = -1;
-  box.append(heading);
+  const box = modalShell(() => dismiss(action, cdata, mine));
   if (note) {
     const n = el('p', 'note', note);
     n.setAttribute('role', 'alert');
@@ -293,8 +440,12 @@ function showPuzzle(r: SubmitReply, action: string, cdata: string, mine: number,
         return showError('network-error');
       }
       if (stale()) return;
-      if (next.status === 'puzzle') return showPuzzle(next, action, cdata, mine, t.wrong);
-      if (next.status === 'stepup') showWait();
+      if (next.status === 'puzzle') {
+        openPuzzle = { reply: next, expires: new Date().getTime() + 4.5 * 60 * 1000 };
+        return showPuzzle(next, action, cdata, mine, t.wrong);
+      }
+      openPuzzle = null;
+      if (next.status === 'stepup') showWait(action, cdata, mine);
       await handle(next, action, cdata, mine);
     })();
   });
@@ -312,7 +463,8 @@ function showPuzzle(r: SubmitReply, action: string, cdata: string, mine: number,
           return showError('network-error');
         }
         if (stale()) return;
-        if (next.status === 'stepup') showWait();
+        openPuzzle = null;
+        if (next.status === 'stepup') showWait(action, cdata, mine);
         await handle(next, action, cdata, mine);
       })();
     });
@@ -325,15 +477,16 @@ function showPuzzle(r: SubmitReply, action: string, cdata: string, mine: number,
     a.rel = 'noopener';
     box.append(a);
   }
-  root.replaceChildren(box);
-  // Focus the heading rather than the first control, so that the task is read
-  // first and nothing scrolls out of view.
-  heading.focus({ preventScroll: true });
 }
 
-function showWait(): void {
-  const box = el('div', 'modal');
-  box.append(el('h1', '', t.puzzleTitle));
+function showWait(action: string, cdata: string, mine: number): void {
+  // Closing the dialog here abandons the calculation, so it starts again from the
+  // checkbox, which runs a fresh verification.
+  const box = modalShell(() => {
+    generation++;
+    worker?.terminate();
+    dismiss(action, cdata, mine + 1);
+  });
   const status = el('p', '', t.waiting);
   status.setAttribute('role', 'status');
   box.append(status);
@@ -342,7 +495,6 @@ function showWait(): void {
   bar.append(fill);
   box.append(bar);
   barTarget = fill;
-  root.replaceChildren(box);
 }
 
 function image(src: string): HTMLImageElement {
@@ -415,22 +567,25 @@ function rotateView(box: HTMLElement, p: PuzzlePublic): () => number[] {
     const slider = el('input');
     slider.type = 'range';
     slider.min = '0';
-    slider.max = '359';
-    slider.step = '1';
+    slider.max = '357';
+    slider.step = '3';
     slider.value = '0';
     slider.setAttribute('aria-label', `${t.rotateLabel} ${index + 1}`);
     slider.addEventListener('input', () => {
       values[index] = Number(slider.value);
       turned.style.transform = `rotate(${slider.value}deg)`;
     });
-    pair.append(image(p.images[i]), turned, slider);
+    // The image turns inside a fixed circle, so its corners never cover the page.
+    const dial = (img: HTMLImageElement): HTMLElement => {
+      const d = el('div', 'dial');
+      d.append(img);
+      return d;
+    };
+    pair.append(dial(image(p.images[i])), dial(turned), slider);
     box.append(pair);
   }
   return () => values;
 }
-
-let lastAction = '';
-let lastCData = '';
 
 window.addEventListener('message', (ev: MessageEvent<HostMessage>) => {
   if (ev.source !== parent || ev.origin !== parentOrigin || ev.data?.sc !== 1) return;
@@ -441,13 +596,18 @@ window.addEventListener('message', (ev: MessageEvent<HostMessage>) => {
       void run(lastAction, lastCData);
       break;
     case 'finish':
-      if (finishWaiter) {
+      if (checkboxPrompt) {
+        checkboxPrompt();
+      } else if (finishWaiter) {
         const w = finishWaiter;
         finishWaiter = null;
         w(ev.data);
       } else {
         earlyFinish = ev.data;
       }
+      break;
+    case 'dismiss':
+      root.querySelector<HTMLButtonElement>('dialog .close')?.click();
       break;
     case 'reset':
       generation++;

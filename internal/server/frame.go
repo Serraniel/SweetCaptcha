@@ -47,6 +47,8 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html lang="en" data-worker="/v1/assets/`)
 	b.WriteString(html.EscapeString(worker.Path))
+	b.WriteString(`" data-version="`)
+	b.WriteString(html.EscapeString(edition.Version))
 	b.WriteString(`"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verification</title><link rel="stylesheet" href="/v1/assets/`)
 	b.WriteString(html.EscapeString(css.Path))
 	b.WriteString(`" integrity="`)
@@ -145,6 +147,7 @@ func (s *Server) handleTransparency(w http.ResponseWriter, r *http.Request) {
 		Retention: map[string]string{ //nolint:gosec // These are descriptions, not credentials.
 			"challenge_state":    "until expiry, at most 11 minutes",
 			"token_redemption":   "until token expiry plus 1 minute",
+			"wait_path_counter":  "1 hour, keyed by a daily-rotating pseudonym of the address",
 			"rate_counter":       "2 minutes, keyed by a daily-rotating pseudonym of the address",
 			"aggregate_counters": "35 days, counts only",
 			"ip_address_stored":  "never",

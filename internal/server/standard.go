@@ -21,9 +21,9 @@ import (
 // Escalation credits, in log-odds. Passing a step reduces suspicion, but a client
 // that needed a puzzle still reports a lower score than one that passed silently.
 const (
-	creditStepUp = 0.5
-	creditPuzzle = 2.5
-	creditWait   = 1.0
+	creditInteract = 0.5
+	creditPuzzle   = 2.5
+	creditWait     = 1.0
 )
 
 const (
@@ -74,6 +74,7 @@ type evidence struct {
 	LogOdds    float64  `json:"l"`
 	Hits       []string `json:"h"`
 	Definitive bool     `json:"d"`
+	Hard       bool     `json:"k"`
 	Attempts   int      `json:"a"`
 }
 
@@ -105,15 +106,19 @@ func parseSignals(raw json.RawMessage) *risk.Signals {
 	return &sig
 }
 
-func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims, raw json.RawMessage) {
+func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims, req submitRequest) {
 	ctx := r.Context()
-	if c.Stage != stageBase {
-		d.finishStage(w, r, s, site, c)
+	switch c.Stage {
+	case stageInteract:
+		d.finishInteract(w, r, s, site, c, req.Click)
+		return
+	case stageWait:
+		d.finishWait(w, r, s, site, c)
 		return
 	}
-	in := d.buildInput(r, s, site, c, raw)
+	in := d.buildInput(r, s, site, c, req.Signals)
 	res := risk.Evaluate(in)
-	ev := evidence{LogOdds: res.LogOdds, Hits: res.Hits, Definitive: res.Definitive}
+	ev := evidence{LogOdds: res.LogOdds, Hits: res.Hits, Definitive: res.Definitive, Hard: res.Hard}
 	for _, h := range res.Hits {
 		s.stats.Add(ctx, site.Name, "rule_"+h)
 	}
@@ -132,8 +137,8 @@ func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, sit
 	switch decision {
 	case "pass":
 		s.issue(w, r, site, c, 1-risk.P(res.LogOdds), "silent", res.Hits)
-	case "stepup":
-		d.startStepUp(w, r, s, site, c, ev)
+	case "interact":
+		d.startInteract(w, r, s, site, c, ev)
 	case "puzzle":
 		c.Session = randomID()
 		d.startPuzzle(w, r, s, site, c, ev)
@@ -166,7 +171,8 @@ func (d *standard) buildInput(r *http.Request, s *Server, site *config.Site, c *
 }
 
 // decide maps a result to the response ladder. Behaviour alone can escalate but
-// never deny: at realistic base rates it cannot be precise enough for that.
+// never deny: at realistic base rates it cannot be precise enough for that. A page
+// with no input at all gets the checkbox, so that there is an interaction to judge.
 func decide(site *config.Site, res risk.Result) string {
 	p := risk.P(res.LogOdds)
 	switch {
@@ -178,16 +184,18 @@ func decide(site *config.Site, res risk.Result) string {
 		return "deny"
 	case p >= site.Policy.PuzzleAbove:
 		return "puzzle"
-	case p >= site.Policy.StepUpAbove:
-		return "stepup"
+	case p >= site.Policy.StepUpAbove, res.NoInteraction:
+		return "interact"
 	}
 	return "pass"
 }
 
-func (d *standard) startStepUp(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims, ev evidence) {
+// startInteract asks for the checkbox. A harder proof of work is solved in the
+// background while it is shown, so the click is what the visitor notices.
+func (d *standard) startInteract(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims, ev evidence) {
 	ctx := r.Context()
 	next := *c
-	next.Session, next.Stage = randomID(), stageStepUp
+	next.Session, next.Stage = randomID(), stageInteract
 	if err := saveEvidence(ctx, s, next.Session, ev); err != nil {
 		slog.Error("save evidence", "error", err)
 		writeJSON(w, http.StatusServiceUnavailable, submitResponse{Status: "retry"})
@@ -195,12 +203,12 @@ func (d *standard) startStepUp(w http.ResponseWriter, r *http.Request, s *Server
 	}
 	sealed, view, err := s.sealChallenge(&next, site.PoW.StepUp, challengeTTL)
 	if err != nil {
-		slog.Error("seal step-up", "error", err)
+		slog.Error("seal interaction step", "error", err)
 		writeJSON(w, http.StatusInternalServerError, submitResponse{Status: "retry"})
 		return
 	}
-	s.stats.Add(ctx, site.Name, stats.StepUp)
-	writeJSON(w, http.StatusOK, submitResponse{Status: "stepup", Challenge: sealed, Pow: view})
+	s.stats.Add(ctx, site.Name, stats.Interact)
+	writeJSON(w, http.StatusOK, submitResponse{Status: "interact", Challenge: sealed, Pow: view})
 }
 
 // puzzleRef is sealed and identifies a puzzle attempt.
@@ -249,11 +257,9 @@ func (d *standard) startPuzzle(w http.ResponseWriter, r *http.Request, s *Server
 		return
 	}
 	s.stats.Add(ctx, site.Name, stats.Puzzle)
-	// A definitive automation marker does not get the wait option: compute alone
-	// must not clear an explicit marker.
 	writeJSON(w, http.StatusOK, submitResponse{
 		Status: "puzzle", PuzzleRef: sealed, Puzzle: pubRaw,
-		WaitOption: site.WaitAllowed() && !ev.Definitive, SupportURL: site.SupportURL,
+		WaitOption: waitOpen(site, ev), SupportURL: site.SupportURL,
 	})
 }
 
@@ -312,9 +318,7 @@ func (d *standard) answer(w http.ResponseWriter, r *http.Request, s *Server) {
 	s.stats.Add(ctx, site.Name, stats.PuzzleFail)
 	ev.Attempts++
 	if ev.Attempts >= maxAttempts {
-		// Without a definitive marker, the wait path stays open for people who
-		// could not solve the puzzles.
-		if site.WaitAllowed() && !ev.Definitive {
+		if waitOpen(site, ev) && withinWaitQuota(r, s, site) {
 			if err := saveEvidence(ctx, s, ref.Session, ev); err == nil {
 				d.issueWait(w, r, s, site, c)
 				return
@@ -331,9 +335,32 @@ type waitRequest struct {
 	Ref string `json:"p"`
 }
 
-// wait exchanges a puzzle for a slow compute task with no cognitive content. It
-// exists for people who cannot use the puzzles. It still costs an attacker time
-// and CPU per action, and the resulting token reports a lower score.
+// waitOpen decides who may leave a puzzle for the compute path. It exists for people
+// who cannot do the puzzles. Their browsers are coherent, whereas contradictions and
+// automation markers come from tampered or automated environments. Those clients
+// must not be able to buy their way past the task with CPU time.
+func waitOpen(site *config.Site, ev evidence) bool {
+	return site.WaitAllowed() && !ev.Definitive && !ev.Hard
+}
+
+// withinWaitQuota limits the path per pseudonymised address, so that it cannot be
+// run at volume from one place. The counter expires after an hour.
+func withinWaitQuota(r *http.Request, s *Server, site *config.Site) bool {
+	addr := s.clientAddr(r)
+	if !addr.IsValid() {
+		return true
+	}
+	key := "wt:" + site.SiteKey + ":" + s.ring.DailyPseudonym(addr.String(), s.now())
+	n, err := s.store.Incr(r.Context(), key, 1, time.Hour)
+	if err != nil {
+		slog.Warn("wait quota counter unavailable", "error", err)
+		return false
+	}
+	return n <= site.Limits.WaitPerHour
+}
+
+// wait exchanges a puzzle for a slow compute task. See waitOpen for who may use it.
+// It costs time and CPU per action, and the resulting token reports a lower score.
 func (d *standard) wait(w http.ResponseWriter, r *http.Request, s *Server) {
 	var req waitRequest
 	if !readJSON(w, r, &req) {
@@ -351,7 +378,8 @@ func (d *standard) wait(w http.ResponseWriter, r *http.Request, s *Server) {
 		return
 	}
 	ev, ok := loadEvidence(ctx, s, ref.Session)
-	if !ok || ev.Definitive {
+	if !ok || !waitOpen(site, ev) || !withinWaitQuota(r, s, site) {
+		s.stats.Add(ctx, site.Name, stats.Deny)
 		writeJSON(w, http.StatusOK, submitResponse{Status: "deny", SupportURL: site.SupportURL})
 		return
 	}
@@ -380,17 +408,41 @@ func (d *standard) issueWait(w http.ResponseWriter, r *http.Request, s *Server, 
 	writeJSON(w, http.StatusOK, submitResponse{Status: "stepup", Challenge: sealed, Pow: view})
 }
 
-func (d *standard) finishStage(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims) {
+func (d *standard) finishInteract(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims, raw json.RawMessage) {
+	ctx := r.Context()
+	ev, ok := loadEvidence(ctx, s, c.Session)
+	if !ok {
+		writeJSON(w, http.StatusBadRequest, submitResponse{Status: "retry"})
+		return
+	}
+	var click *risk.Click
+	if len(raw) > 0 {
+		var parsed risk.Click
+		if json.Unmarshal(raw, &parsed) == nil {
+			click = &parsed
+		}
+	}
+	res := risk.EvaluateClick(click)
+	for _, h := range res.Hits {
+		s.stats.Add(ctx, site.Name, "rule_"+h)
+	}
+	ev.LogOdds += res.LogOdds - creditInteract
+	ev.Hits = append(ev.Hits, res.Hits...)
+	ev.Hard = ev.Hard || res.Hard
+	if risk.P(ev.LogOdds) >= site.Policy.PuzzleAbove || res.Hard {
+		d.startPuzzle(w, r, s, site, c, ev)
+		return
+	}
+	s.issue(w, r, site, c, 1-risk.P(ev.LogOdds), "checkbox", ev.Hits)
+}
+
+func (d *standard) finishWait(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims) {
 	ev, ok := loadEvidence(r.Context(), s, c.Session)
 	if !ok {
 		writeJSON(w, http.StatusBadRequest, submitResponse{Status: "retry"})
 		return
 	}
-	credit, via := creditStepUp, "stepup"
-	if c.Stage == stageWait {
-		credit, via = creditWait, "wait"
-	}
-	s.issue(w, r, site, c, 1-risk.P(ev.LogOdds-credit), via, ev.Hits)
+	s.issue(w, r, site, c, 1-risk.P(ev.LogOdds-creditWait), "wait", ev.Hits)
 }
 
 func (d *standard) register() ([]string, any) {

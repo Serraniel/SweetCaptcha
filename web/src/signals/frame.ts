@@ -4,6 +4,12 @@
 import { keyedHash } from '../shared/sha256.ts';
 import { scanArtefacts } from './artefacts.ts';
 
+declare global {
+  interface Window {
+    __sweetcaptchaCollect?: (nonce: string, workerUrl: string, page: { behaviour: unknown; artefacts: unknown }) => Promise<unknown>;
+  }
+}
+
 function safe<T>(fn: () => T, fallback: T): T {
   try {
     return fn();
@@ -201,6 +207,28 @@ function cdpObserved(): boolean {
   console.debug(e);
   return hit;
 }
+
+// Checkbox evidence, gathered inside the frame from the moment the box appears.
+// A driver usually sends one move onto the target and clicks; a person's pointer
+// arrives over several moves. Keyboard activation reports detail 0 and is fine.
+let shownAt = -1;
+let movesSinceShown = 0;
+let lastClick: { pointer: string; approach: boolean; trusted: boolean; shownMs: number } | null = null;
+document.addEventListener('pointermove', () => {
+  if (shownAt >= 0) movesSinceShown++;
+}, { capture: true, passive: true });
+document.addEventListener('click', (e: MouseEvent) => {
+  if (shownAt < 0 || !(e.target instanceof Element) || !e.target.closest('.check')) return;
+  const pe = e as PointerEvent;
+  const pointer = e.detail === 0 ? 'keyboard' : (pe.pointerType || 'mouse');
+  lastClick = { pointer, approach: movesSinceShown >= 2, trusted: e.isTrusted, shownMs: Math.round(performance.now() - shownAt) };
+}, { capture: true });
+(window as unknown as { __sweetcaptchaMark: () => void }).__sweetcaptchaMark = () => {
+  shownAt = performance.now();
+  movesSinceShown = 0;
+  lastClick = null;
+};
+(window as unknown as { __sweetcaptchaClick: () => unknown }).__sweetcaptchaClick = () => lastClick;
 
 window.__sweetcaptchaCollect = async (nonce, workerUrl, page) => {
   const engine = engineFamily();

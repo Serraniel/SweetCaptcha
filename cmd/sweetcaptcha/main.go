@@ -21,9 +21,6 @@ import (
 	"github.com/Serraniel/SweetCaptcha/internal/store"
 )
 
-// version is set at build time.
-var version = "dev"
-
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	cmd := "serve"
@@ -40,7 +37,7 @@ func main() {
 	case "healthcheck":
 		err = healthcheck(args)
 	case "version":
-		fmt.Printf("sweetcaptcha %s strict_only=%v\n", version, edition.StrictOnly)
+		fmt.Printf("sweetcaptcha %s strict_only=%v\n", edition.Version, edition.StrictOnly)
 	default:
 		if !extraCommand(cmd, args, &err) {
 			err = fmt.Errorf("unknown command %q; expected serve, keygen, healthcheck, version%s", cmd, extraCommandNames)
@@ -77,7 +74,7 @@ func serve(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	slog.Info("starting", "version", version, "strict_only", edition.StrictOnly, "sites", len(cfg.Sites))
+	slog.Info("starting", "version", edition.Version, "strict_only", edition.StrictOnly, "sites", len(cfg.Sites))
 	return srv.Run(ctx)
 }
 

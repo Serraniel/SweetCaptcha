@@ -113,6 +113,8 @@ type Policy struct {
 type Limits struct {
 	SoftPerMinute int64 `yaml:"soft_per_minute"`
 	HardPerMinute int64 `yaml:"hard_per_minute"`
+	// WaitPerHour limits uses of the wait path per pseudonymised address.
+	WaitPerHour int64 `yaml:"wait_per_hour"`
 }
 
 // Site is one integration.
@@ -317,6 +319,9 @@ func (s *Site) finish() error {
 	}
 	if s.Limits.HardPerMinute == 0 {
 		s.Limits.HardPerMinute = 300
+	}
+	if s.Limits.WaitPerHour == 0 {
+		s.Limits.WaitPerHour = 5
 	}
 	if len(s.Puzzles) == 0 {
 		s.Puzzles = []string{"line-trace", "gap-rings", "rotate-match"}

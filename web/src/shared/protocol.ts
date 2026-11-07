@@ -2,11 +2,14 @@
 
 export interface HostMessage {
   sc: 1;
-  type: 'start' | 'finish' | 'reset';
+  type: 'start' | 'finish' | 'reset' | 'dismiss';
   action?: string;
   cdata?: string;
   behaviour?: unknown;
   artefacts?: string[];
+  // True when the visitor caused this, by sending the form or through execute().
+  // Only then may a task open on its own.
+  user?: boolean;
 }
 
 export interface FrameMessage {
@@ -16,6 +19,7 @@ export interface FrameMessage {
   ttl?: number;
   code?: string;
   on?: boolean;
+  dismissed?: boolean;
   page?: string;
   pageSri?: string;
 }

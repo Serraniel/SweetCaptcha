@@ -3,6 +3,7 @@
 package puzzle
 
 import (
+	"math/rand/v2"
 	"strings"
 	"testing"
 )
@@ -52,8 +53,11 @@ func TestRotateTolerance(t *testing.T) {
 	if !Check(a, []int{355, 0}) {
 		t.Error("near answer across the wrap rejected")
 	}
-	if !Check(a, []int{2, 359}) {
+	if !Check(a, []int{9, 351}) {
 		t.Error("answers within tolerance across zero rejected")
+	}
+	if Check(a, []int{320, 10}) {
+		t.Error("answer outside tolerance accepted")
 	}
 	if Check(a, []int{180, 10}) || Check(a, []int{350}) {
 		t.Error("wrong answer accepted")
@@ -72,5 +76,30 @@ func TestAnswerIsNotInPublic(t *testing.T) {
 	}
 	if _, _, err := Generate("nope"); err == nil {
 		t.Error("unknown family accepted")
+	}
+}
+
+// People must be able to follow the lines by shape alone, since they share a colour.
+func TestLineLayoutsAreReadable(t *testing.T) {
+	r := rand.New(rand.NewPCG(1, 2))
+	rowY := func(i int) float64 { return 34 + float64(i)*232/(lineCount-1) }
+	for range 2000 {
+		_, marked, curves := layoutLines(r, 440, 300, rowY)
+		if run := longestCloseRun(curves); run > maxCloseRun {
+			t.Fatalf("lines run together for %d steps", run)
+		}
+		for _, m := range marked {
+			if crossings(curves, m) < minCrossings {
+				t.Fatalf("marked line %d crosses too few others", m)
+			}
+		}
+	}
+}
+
+func BenchmarkLineTrace(b *testing.B) {
+	for b.Loop() {
+		if _, _, err := Generate(LineTrace); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

@@ -26,7 +26,7 @@ const (
 	RateLimit  = "rate_limited"
 	Verified   = "verified"
 	VerifyFail = "verify_failed"
-	StepUp     = "stepup"
+	Interact   = "interact"
 	Puzzle     = "puzzle"
 	PuzzleOK   = "puzzle_ok"
 	PuzzleFail = "puzzle_fail"
@@ -36,7 +36,7 @@ const (
 )
 
 // Base lists counters every edition records.
-var Base = []string{Issued, Passed, PowFailed, Replayed, RateLimit, Verified, VerifyFail, StepUp, Puzzle, PuzzleOK, PuzzleFail, Wait, Deny, ShadowDiff}
+var Base = []string{Issued, Passed, PowFailed, Replayed, RateLimit, Verified, VerifyFail, Interact, Puzzle, PuzzleOK, PuzzleFail, Wait, Deny, ShadowDiff}
 
 // Recorder writes counters to a store. Failures are logged and never affect a
 // verification decision.
