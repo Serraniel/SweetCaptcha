@@ -147,7 +147,7 @@ var (
 
 // Load reads and validates path, expanding ${VAR} references.
 func Load(path string) (*Config, error) {
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(path) //nolint:gosec // The operator chooses the config path.
 	if err != nil {
 		return nil, err
 	}

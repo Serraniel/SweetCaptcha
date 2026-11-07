@@ -62,7 +62,7 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleLoader serves the one script host pages include.
-func (s *Server) handleLoader(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleLoader(w http.ResponseWriter, _ *http.Request) {
 	loader, ok := s.core["api.js"]
 	if !ok {
 		http.Error(w, "widget assets are not built", http.StatusInternalServerError)
@@ -142,7 +142,7 @@ func (s *Server) handleTransparency(w http.ResponseWriter, r *http.Request) {
 	t := transparency{
 		SiteKey: site.SiteKey, Mode: string(site.Mode), StrictBuild: edition.StrictOnly,
 		ClientReads: []string{}, Storage: []string{}, ThirdParty: []string{}, Rules: []any{},
-		Retention: map[string]string{
+		Retention: map[string]string{ //nolint:gosec // These are descriptions, not credentials.
 			"challenge_state":    "until expiry, at most 11 minutes",
 			"token_redemption":   "until token expiry plus 1 minute",
 			"rate_counter":       "2 minutes, keyed by a daily-rotating pseudonym of the address",

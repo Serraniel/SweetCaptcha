@@ -45,7 +45,7 @@ func (s *Server) demoRoutes(mux *http.ServeMux) {
 		).Replace(demoHTML)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
-		if _, err := w.Write([]byte(page)); err != nil {
+		if _, err := w.Write([]byte(page)); err != nil { //nolint:gosec // Every substituted value is a constant or is HTML-escaped.
 			slog.Debug("write demo", "error", err)
 		}
 	})

@@ -89,7 +89,7 @@ func Check(a Answer, submitted []int) bool {
 			return false
 		}
 		for i, want := range a.Values {
-			if math.Abs(math.Remainder(float64(submitted[i]-want), 360)) > rotateTolerance {
+			if math.Abs(math.Remainder(float64(submitted[i]-want), 360)) > rotateTolerance { //nolint:gosec // The lengths were compared above.
 				return false
 			}
 		}

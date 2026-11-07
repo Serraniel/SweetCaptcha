@@ -190,7 +190,7 @@ func collapse(in []netip.Prefix) []netip.Prefix {
 }
 
 func readLines(path string, fn func(string)) error {
-	f, err := os.Open(path)
+	f, err := os.Open(path) //nolint:gosec // Paths are built from the configured data directory.
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -211,7 +211,7 @@ func readLines(path string, fn func(string)) error {
 // Update downloads all sources into dir. A failed source leaves its previous
 // file in place, and the error is returned after the others have been tried.
 func Update(ctx context.Context, dir string, client *http.Client) error {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return err
 	}
 	var failed []string
@@ -326,13 +326,13 @@ func writeAtomic(path string, data []byte) error {
 	}
 	defer os.Remove(tmp.Name())
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
+	if err := os.Chmod(tmp.Name(), 0o640); err != nil {
 		return err
 	}
 	return os.Rename(tmp.Name(), path)
