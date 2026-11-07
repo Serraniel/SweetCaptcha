@@ -136,7 +136,7 @@ func (s *Server) demoRoutes(mux *http.ServeMux) {
 		}
 		page := `<!doctype html><html lang="en"` + demoThemeAttr(theme) + `><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Result</title><style>` + demoCSS + `</style><main><h1>Server-side result</h1><p>This is the complete response your backend would receive from <code>siteverify</code>.</p><pre id="result">` +
 			html.EscapeString(string(body)) + `</pre><p><a href="` + html.EscapeString(demoURL(provider, site.SiteKey, theme)) + `">Back</a></p><h2>What the fields mean</h2><table>` + rows.String() + `</table></main>`
-		if _, err := w.Write([]byte(page)); err != nil {
+		if _, err := w.Write([]byte(page)); err != nil { //nolint:gosec // The theme is from an allow list; all other values are HTML-escaped.
 			slog.Debug("write demo result", "error", err)
 		}
 	})
