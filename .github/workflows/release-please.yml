@@ -24,6 +24,21 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+  # Below 1.0 every release is a beta: plain semantic 0.y.z versions, marked as
+  # pre-releases on GitHub. The flag is set here because release-please's own
+  # pre-release option would also add a -beta suffix to the version.
+  mark-prerelease:
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true' && startsWith(needs.release-please.outputs.version, '0.')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease --latest=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag }}
+
   publish:
     needs: release-please
     if: needs.release-please.outputs.created == 'true'
