@@ -9,6 +9,6 @@ Maintained evasion tools against the standard site, headless on one machine, wit
 | Patchright, agent-style input | Maintained stealth fork | puzzle |  |
 | rebrowser-playwright, agent-style input | Maintained stealth fork | puzzle |  |
 | puppeteer-extra stealth, agent-style input | Classic stealth plugin | puzzle |  |
-| Patchright, humanised input | Maintained stealth fork | pass (silent, score 0.69) | `env_software_gpu` `obs_cdp` |
-| rebrowser-playwright, humanised input | Maintained stealth fork | pass (silent, score 0.69) | `env_software_gpu` `obs_cdp` |
+| Patchright, humanised input | Maintained stealth fork | pass (silent, score 0.69) | `env_software_gpu` |
+| rebrowser-playwright, humanised input | Maintained stealth fork | pass (silent, score 0.69) | `env_software_gpu` |
 | puppeteer-extra stealth, humanised input | Classic stealth plugin | puzzle |  |

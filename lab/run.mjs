@@ -75,7 +75,7 @@ function forgedSignals(ua, major) {
       v: 1, secure: true, auto: { webdriver: false, artefacts: [] }, tamper: [], hash: h, worker: h, iframe: h,
       engine: { family: 'v8', evalLen: 33 }, uach: { chromiumMajor: major, mobile: false, platform: 'Linux' },
       device: { platform: 'Linux x86_64', touch: 0, pointer: 'fine', langs: 2, gpu: 'intel', gpuApi: 'opengl', canvasStable: true },
-      trap: false, cdp: false,
+      trap: false,
       beh: { mode: 'mouse', moves: 60, clicks: 1, noApproach: 0, straightness: 0.8, speedCv: 0.7, dirChanges: 5, keys: 8, keyMedianMs: 120, keyCv: 0.4 },
     };
   };

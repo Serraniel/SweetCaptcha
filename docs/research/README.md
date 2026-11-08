@@ -3,3 +3,5 @@
 The [report](report.md) synthesises the [notes](notes), which were compiled in November 2026 from public sources. [Proof-of-work balancing](notes/pow_balancing.md) was added later and drives the difficulty defaults. The report covers commercial systems, fingerprinting, behavioural signals and AI agents, peer products, API specifications, law and trust boundaries.
 
 Source quality varies, and the notes state where a claim is second-hand or unverified. The design decisions in the code follow the report, but its thresholds and weights are engineering judgement rather than measurements. Web pages can change, and the legal sections are not legal advice.
+
+Later notes: [proof-of-work balancing](notes/pow_balancing.md), [AI-resistant tasks](notes/ai_resistant_challenges.md), and the [console-serialization check](notes/cdp_check.md), which an experiment showed to be useless and which was removed.

@@ -13,15 +13,15 @@ These are outcomes against one browser on one machine. They show how the rules b
 | Stock Playwright, headless | Stock automation | deny | deny |  |
 | Automation flag hidden, UA spoofed, agent-style input | Default agent | puzzle | puzzle |  |
 | Script patches webdriver and languages | JS-patched stealth | puzzle | puzzle or deny |  |
-| Flag hidden, UA spoofed, humanised pointer and typing | Humanised browser | pass (silent, score 0.69) | pass or checkbox-pass | `env_software_gpu` `obs_cdp` |
+| Flag hidden, UA spoofed, humanised pointer and typing | Humanised browser | pass (silent, score 0.69) | pass or checkbox-pass | `env_software_gpu` |
 | Agent waits, then clicks the checkbox directly | Default agent | puzzle | puzzle |  |
-| Visitor who does not move, then ticks the checkbox | Humanised browser | checkbox-pass (checkbox, score 0.71) | checkbox-pass | `beh_no_interaction` `env_software_gpu` `obs_cdp` |
+| Visitor who does not move, then ticks the checkbox | Humanised browser | checkbox-pass (checkbox, score 0.71) | checkbox-pass | `beh_no_interaction` `env_software_gpu` |
 | Strict mode: no device reads, storage, or third parties | Privacy | clean | clean |  |
 | Audit control: the same audit does find reads on a standard site | Privacy | violation | violation |  |
 | Strict mode: all four provider form flows | Compatibility | pass | pass |  |
-| Base proof of work: time to token in strict mode, this machine | Mechanics | fast | fast | `median 261 ms` `max 346 ms` |
+| Base proof of work: time to token in strict mode, this machine | Mechanics | fast | fast | `median 251 ms` `max 318 ms` |
 | reCAPTCHA v3, Turnstile and hCaptcha JavaScript APIs | Compatibility | pass | pass |  |
-| Checkbox step, with scrypt proof of work in the browser | Mechanics | pass (checkbox, score 0.79) | pass | `env_software_gpu` `obs_cdp` |
-| Puzzle interface, then the wait path | Mechanics | pass (wait, score 0.86) | pass | `env_software_gpu` `obs_cdp` |
+| Checkbox step, with scrypt proof of work in the browser | Mechanics | pass (checkbox, score 0.79) | pass | `env_software_gpu` |
+| Puzzle interface, then the wait path | Mechanics | pass (wait, score 0.86) | pass | `env_software_gpu` |
 | Frame refuses a host not on the allow list | Mechanics | blocked | blocked |  |
-| Real browser TLS handshake is not flagged | Mechanics | clean (silent, score 0.69) | clean | `env_software_gpu` `obs_cdp` |
+| Real browser TLS handshake is not flagged | Mechanics | clean (silent, score 0.69) | clean | `env_software_gpu` |

@@ -20,7 +20,6 @@ type Signals struct {
 	UACH   *UACH      `json:"uach"`
 	Device Device     `json:"device"`
 	Trap   bool       `json:"trap"`
-	CDP    bool       `json:"cdp"`
 	Beh    *Behaviour `json:"beh"`
 }
 
