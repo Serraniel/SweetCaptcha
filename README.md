@@ -2,6 +2,8 @@
 
 A self-hosted CAPTCHA that verifies most visitors without a task. It runs as a Docker stack and offers API compatibility with reCAPTCHA, hCaptcha and Turnstile. Nothing is sent to a third party.
 
+![The widget verifying a visitor without a task, in light and dark themes](docs/media/demo.gif)
+
 It combines server-side checks on device and network consistency, interaction analysis, proof of work and single-use tokens. Questionable clients get more work or an interactive task. An opt-in strict mode, also available as a separate image, removes all device and interaction signals and uses proof of work only.
 
 ## Quick start
