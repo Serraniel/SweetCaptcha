@@ -64,7 +64,11 @@ All conditions in a rule must hold. Forcing `pass` overrides every built-in chec
 
 Proof of work adds friction and shapes request rates. It does not stop a funded attacker: a native solver runs about 11 times faster than browser JavaScript, and a GPU thousands of times faster, so 1,000 base solves cost an attacker a fraction of a cent. The defaults therefore keep the base level light for people, and put the work on risky or high-volume clients. The [research notes](research/notes/pow_balancing.md) compare peer products and the economics.
 
-The widget solves in 4 workers in parallel. A fixed count avoids reading the device's core count, which strict mode must not do.
+The widget solves in 4 workers in parallel. A fixed count avoids reading the device's core count, which strict mode must not do. If a worker fails, usually because a low-memory or 32-bit device can't allocate memory-hard work, the widget retries once with a single worker. The algorithm and difficulty stay the same.
+
+[Benchmarks](BENCHMARKS.md) compare the widget with a native solver. On the lab desktop, the widget with 4 workers is about as fast as a native Go solver on one thread, so a native solver on all cores is several times faster than a visitor's browser.
+
+**Why there is no heavier memory-hard level.** Verifying memory-hard work costs the server almost as much as the browser pays to solve each hash. The current scrypt option (N=1024, about 1 MiB) already costs the server about 34 ms of CPU to verify a valid 16-puzzle submission, against about 6 µs for SHA-256. A 16 MiB level would multiply that and turn verification into a denial-of-service lever. Use scrypt for the checkbox step only if you accept that server cost.
 
 | Level | Desktop (measured) | Median phone (estimate) | Low-end phone (estimate) |
 |---|---|---|---|

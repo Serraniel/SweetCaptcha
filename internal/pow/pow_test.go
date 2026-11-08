@@ -58,3 +58,49 @@ func TestLeadingZeroBits(t *testing.T) {
 		}
 	}
 }
+
+// Native single-thread solve times per default level. lab/bench.mjs compares them
+// with the browser widget.
+func BenchmarkSolveNative(b *testing.B) {
+	for _, l := range []struct {
+		name        string
+		algo        string
+		bits, count int
+	}{
+		{"base", SHA256, 14, 48},
+		{"checkbox", SHA256, 16, 48},
+		{"wait", SHA256, 18, 48},
+		{"scrypt", Scrypt, 4, 16},
+	} {
+		b.Run(l.name, func(b *testing.B) {
+			for b.Loop() {
+				p, err := New(l.algo, l.bits, l.count)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if _, err := p.Solve(); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkVerify measures what the server pays per submission.
+func BenchmarkVerify(b *testing.B) {
+	for _, l := range []struct {
+		name        string
+		algo        string
+		bits, count int
+	}{{"sha256-48", SHA256, 14, 48}, {"scrypt-16", Scrypt, 4, 16}} {
+		p, _ := New(l.algo, l.bits, l.count)
+		nonces, _ := p.Solve()
+		b.Run(l.name, func(b *testing.B) {
+			for b.Loop() {
+				if !p.Verify(nonces) {
+					b.Fatal("rejected")
+				}
+			}
+		})
+	}
+}

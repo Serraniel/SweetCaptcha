@@ -5,6 +5,12 @@ import { solveIndices, type PowParams } from './shared/pow.ts';
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
 ctx.onmessage = (ev: MessageEvent<{ params: PowParams; indices: number[] }>) => {
-  solveIndices(ev.data.params, ev.data.indices, (index, nonce) => ctx.postMessage({ index, nonce }));
-  ctx.postMessage({ done: true });
+  try {
+    solveIndices(ev.data.params, ev.data.indices, (index, nonce) => ctx.postMessage({ index, nonce }));
+    ctx.postMessage({ done: true });
+  } catch (e) {
+    // Most often an allocation failure on a low-memory or 32-bit device. The
+    // frame then retries with fewer workers, using the same algorithm.
+    ctx.postMessage({ error: String(e) });
+  }
 };
