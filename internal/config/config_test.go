@@ -91,3 +91,12 @@ func TestEnvExpansion(t *testing.T) {
 		t.Error("expected an error for an unset variable")
 	}
 }
+
+func TestLegalURLsMustBeHTTP(t *testing.T) {
+	if _, err := Parse([]byte(doc("    privacy_url: javascript:alert(1)\n"))); err == nil {
+		t.Error("javascript: URL accepted")
+	}
+	if _, err := Parse([]byte(doc("    imprint_url: https://example.com/imprint\n"))); err != nil {
+		t.Errorf("https URL rejected: %v", err)
+	}
+}

@@ -543,3 +543,22 @@ func TestHelpPage(t *testing.T) {
 		t.Error("unescaped input on the help page")
 	}
 }
+
+func TestFrameCarriesLegalLinksAndNoindex(t *testing.T) {
+	_, ts := newTest(t, strings.Replace(strictSite, "    mode: strict\n", "    mode: strict\n    privacy_url: https://example.com/privacy?a=1&b=\"x\"\n", 1))
+	resp, err := http.Get(ts.URL + "/v1/frame?k=" + strictKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Skip("widget assets are not built")
+	}
+	if resp.Header.Get("X-Robots-Tag") != "noindex, nofollow" {
+		t.Error("frame may be indexed")
+	}
+	raw, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(raw), `data-privacy="https://example.com/privacy?a=1&amp;b=&#34;x&#34;"`) {
+		t.Errorf("privacy link missing or unescaped: %s", raw)
+	}
+}

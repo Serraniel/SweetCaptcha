@@ -29,6 +29,7 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `puzzles` | `line-trace`, `gap-rings`, `kinetic`, `stack-order` | `rotate-match` is also available. Disable a family if its solve rate climbs. |
 | `wait_fallback` | `true` | Lets coherent browsers leave a puzzle for a long calculation. Never offered to clients with contradictions or automation markers. If you turn it off, people who can't do visual tasks need another route, such as `support_url`. |
 | `support_url` | none | Shown on a deny and beside puzzles. |
+| `privacy_url`, `imprint_url` | none | Your privacy notice and imprint, linked in small print in the widget and the task popup. Leave them empty if your page already links them near the form. |
 | `test_mode` | none | `pass` or `fail` for integrator tests. Never use it in production. |
 
 ## Site rules
