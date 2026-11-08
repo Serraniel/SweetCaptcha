@@ -27,6 +27,12 @@ jobs:
 
   go:
     runs-on: ubuntu-latest
+    # The server tests also run against Valkey, so that atomic single-use
+    # redemption is checked against the real store.
+    services:
+      valkey:
+        image: valkey/valkey:9-alpine@sha256:bf09d58e96d6b4524a15396b65b242bbe18beebbcc15a04d8ee75ddac62fae0b
+        ports: ["6379:6379"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -37,6 +43,10 @@ jobs:
       - run: go vet ./...
       - run: go vet -tags strictonly ./...
       - run: go test -race ./...
+      - name: Server tests against Valkey
+        run: go test -race ./internal/server
+        env:
+          SC_TEST_VALKEY: redis://localhost:6379/15
       - run: go test -race -tags strictonly ./internal/server ./internal/config
       - name: Strict build must not link detection code
         run: |

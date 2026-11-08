@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Serraniel/SweetCaptcha/internal/config"
 	"github.com/Serraniel/SweetCaptcha/internal/pow"
@@ -41,9 +44,35 @@ const strictSite = `
     pow: {base: {algo: sha256, bits: 4, count: 2}}
 `
 
+// testStore returns Valkey when SC_TEST_VALKEY names one, so that atomicity is
+// tested against the real store in CI, and the in-memory store otherwise.
+func testStore(t *testing.T) store.Store {
+	t.Helper()
+	url := os.Getenv("SC_TEST_VALKEY")
+	if url == "" {
+		return store.NewMemory()
+	}
+	// Each test starts from an empty database. Use a database reserved for tests.
+	opts, err := redis.ParseURL(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := redis.NewClient(opts)
+	if err := c.FlushDB(t.Context()).Err(); err != nil {
+		t.Fatal(err)
+	}
+	_ = c.Close()
+	v, err := store.NewValkey(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = v.Close() })
+	return v
+}
+
 func newTest(t *testing.T, sites string) (*Server, *httptest.Server) {
 	t.Helper()
-	s, err := New(testConfig(t, sites), store.NewMemory())
+	s, err := New(testConfig(t, sites), testStore(t))
 	if err != nil {
 		t.Fatal(err)
 	}
