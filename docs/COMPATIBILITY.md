@@ -33,6 +33,18 @@ Verify endpoints accept form-encoded and JSON bodies. reCAPTCHA's also accepts G
 | hCaptcha | `render`, `reset`, `getResponse`, `remove`, `execute` including `{async: true}`, invisible |
 | Turnstile | `render`, `execute`, `reset`, `remove`, `getResponse`, `isExpired`, `ready`, `action`, `cData`, `execution`, `appearance`, `response-field`, `response-field-name`, `refresh-expired`, `size`, `theme`, `language` |
 
+## Languages
+
+The widget is translated into 21 languages: English, German, French, Spanish, Portuguese, Italian, Dutch, Polish, Czech, Swedish, Russian, Ukrainian, Turkish, Arabic (right to left), Hindi, Indonesian, Vietnamese, Chinese (Simplified and Traditional), Japanese and Korean. Translations other than English and German were machine-assisted and need native review.
+
+The server picks the language in this order:
+1. `hl` on the script URL, `data-language`, or `language` / `hl` in `render()`. `auto` means no explicit choice.
+2. The visitor's `Accept-Language` header.
+3. The host page's `<html lang>`.
+4. English.
+
+The browser's language is never read by script, so strict mode stays free of device reads.
+
 ## Not covered
 
 - `grecaptcha.enterprise` and the reCAPTCHA Enterprise assessment API

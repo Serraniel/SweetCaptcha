@@ -10,12 +10,12 @@ const q = new URLSearchParams(location.search);
 const siteKey = q.get('k') ?? '';
 const hostname = q.get('h') ?? '';
 const parentOrigin = q.get('o') ?? '';
-const t = strings(q.get('l') ?? '');
+// The server chose the language and set it on <html lang>.
+const t = strings(document.documentElement.lang);
 const invisible = q.get('s') === 'invisible';
 const theme = q.get('t');
 if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
 if (q.get('s') === 'compact') document.body.classList.add('compact');
-document.documentElement.lang = t === strings('de') ? 'de' : 'en';
 
 const root = document.getElementById('root')!;
 const workerUrl = document.documentElement.dataset.worker!;
@@ -40,7 +40,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
 }
 
 function brandLine(): HTMLElement {
-  return el('div', 'brand', `${t.brand} ${document.documentElement.dataset.version ?? ''}`.trim());
+  return el('div', 'brand', `SweetCaptcha ${document.documentElement.dataset.version ?? ''}`.trim());
 }
 
 function statusLine(message: string): HTMLElement {
