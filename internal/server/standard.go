@@ -47,6 +47,7 @@ func (d *standard) start(ctx context.Context) { d.ip.Watch(ctx, 10*time.Minute) 
 func (d *standard) routes(mux *http.ServeMux, s *Server) {
 	mux.HandleFunc("POST /v1/answer", func(w http.ResponseWriter, r *http.Request) { d.answer(w, r, s) })
 	mux.HandleFunc("POST /v1/wait", func(w http.ResponseWriter, r *http.Request) { d.wait(w, r, s) })
+	mux.HandleFunc("GET /v1/t/{ref}", func(w http.ResponseWriter, r *http.Request) { d.trap(w, r, s) })
 }
 
 func (d *standard) wrapListener(srv *http.Server, _ *config.Config) {
@@ -66,6 +67,21 @@ func (d *standard) tlsFacts(r *http.Request, s *Server) *risk.TLSFacts {
 		}
 	}
 	return nil
+}
+
+// trap records that a frame's hidden link was fetched. It answers with a plain,
+// tiny page: no content to waste anyone's resources, and nothing to index.
+func (d *standard) trap(w http.ResponseWriter, r *http.Request, s *Server) {
+	if id := s.openTrap(r.PathValue("ref")); id != "" {
+		if err := s.store.Set(r.Context(), "tf:"+id, "1", trapTTL); err != nil {
+			slog.Warn("record trap", "error", err)
+		}
+	}
+	h := w.Header()
+	h.Set("Content-Type", "text/plain; charset=utf-8")
+	h.Set("Cache-Control", "no-store")
+	h.Set("X-Robots-Tag", "noindex, nofollow")
+	_, _ = w.Write([]byte("Verification is required.\n"))
 }
 
 // evidence is the only per-session state, and it expires with the session. It
@@ -173,6 +189,11 @@ func (d *standard) buildInput(r *http.Request, s *Server, site *config.Site, c *
 	if addr := s.clientAddr(r); addr.IsValid() {
 		in.Datacenter, in.Tor = d.ip.Datacenter(addr), d.ip.Tor(addr)
 		in.NetFailures = s.networkFailures(r, site)
+	}
+	if c.Trap != "" {
+		if _, found, err := s.store.Get(ctx, "tf:"+c.Trap); err == nil && found {
+			in.TrapFollowed = true
+		}
 	}
 	// Replay detection compares a sketch of the pointer path across challenges. It
 	// is keyed per site and day and expires in ten minutes, so it links nothing

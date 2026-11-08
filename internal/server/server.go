@@ -37,6 +37,7 @@ type Server struct {
 	chalBox  *seal.Box
 	tokBox   *seal.Box
 	puzBox   *seal.Box
+	trapBox  *seal.Box
 	core     assets.Manifest
 	coreFS   fs.FS
 	signals  assets.Manifest
@@ -65,6 +66,9 @@ func New(cfg *config.Config, st store.Store) (*Server, error) {
 		return nil, err
 	}
 	if s.puzBox, err = seal.New(ring.Derive("puzzle", "")); err != nil {
+		return nil, err
+	}
+	if s.trapBox, err = seal.New(ring.Derive("trap", "")); err != nil {
 		return nil, err
 	}
 	for i := range cfg.Sites {

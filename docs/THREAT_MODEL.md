@@ -35,7 +35,7 @@ Each row gives the route, what defends against it today, and what is left.
 | Route | Current defence | Residual risk |
 |---|---|---|
 | Solve proof of work natively, without a browser | Missing or invalid signals send the client to a puzzle | Forged signals (next row) |
-| Forge the signal document | Header and TLS cross-checks; keyed hashes tied to the challenge | **High behind a plain proxy.** Every client value can be forged, and the code shows how. Native TLS exposes non-browser handshakes, but that only adds the checkbox. |
+| Forge the signal document | Header and TLS cross-checks; keyed hashes tied to the challenge; a hidden link in the frame that catches scrapers following every link | **High behind a plain proxy.** Every client value can be forged, and the code shows how. Native TLS exposes non-browser handshakes, but that only adds the checkbox. |
 | Patch JavaScript in a real browser | Native-function, Proxy and descriptor checks; Worker and iframe comparison | Engine-level patches (Camoufox and similar) are invisible to these checks. |
 | Move and type like a person | Behaviour rules only catch crude automation | **High.** Libraries for human-like input are common. Behaviour evidence has a short shelf life. |
 | Click the checkbox with a script | Untrusted clicks and clicks with no approach path lead to a puzzle | Real input events with a curved path pass. |

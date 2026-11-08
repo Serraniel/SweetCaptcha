@@ -65,7 +65,17 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	b.WriteString(html.EscapeString(css.Path))
 	b.WriteString(`" integrity="`)
 	b.WriteString(html.EscapeString(css.SRI))
-	b.WriteString(`"></head><body><main id="root"></main><script src="/v1/assets/`)
+	b.WriteString(`"></head><body>`)
+	// A link no person or assistive technology meets: off-screen, aria-hidden and
+	// out of the tab order. Scrapers that parse the raw HTML and follow every link
+	// fetch it. Standard mode only.
+	if site.Mode == config.ModeStandard {
+		if trap := s.newTrap(); trap != "" {
+			b.WriteString(`<a class="t" href="/v1/t/` + html.EscapeString(trap) + `" data-trap="` + html.EscapeString(trap) +
+				`" tabindex="-1" aria-hidden="true" rel="nofollow">Continue without verification</a>`)
+		}
+	}
+	b.WriteString(`<main id="root"></main><script src="/v1/assets/`)
 	b.WriteString(html.EscapeString(script.Path))
 	b.WriteString(`" integrity="`)
 	b.WriteString(html.EscapeString(script.SRI))

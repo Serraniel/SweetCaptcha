@@ -49,6 +49,7 @@ type claims struct {
 	Stage    string     `json:"t"`
 	Session  string     `json:"e,omitempty"`
 	Nonce    string     `json:"n,omitempty"`
+	Trap     string     `json:"tp,omitempty"`
 	Velocity int64      `json:"v,omitempty"`
 	Pow      pow.Params `json:"p"`
 	Issued   int64      `json:"ia"`
@@ -86,6 +87,8 @@ type challengeRequest struct {
 	Action   string `json:"action"`
 	Hostname string `json:"hostname"`
 	CData    string `json:"cdata"`
+	// Trap is the sealed reference from the frame's hidden link, if any.
+	Trap string `json:"trap"`
 }
 
 type powView struct {
@@ -158,6 +161,7 @@ func (s *Server) handleChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	var collect *collectView
 	if site.Mode == config.ModeStandard {
+		c.Trap = s.openTrap(req.Trap)
 		c.Nonce = randomID()
 		collect = s.collectFor(c.Nonce)
 	}
@@ -193,6 +197,32 @@ func (s *Server) networkPseudonym(addr netip.Addr) string {
 		family = "4."
 	}
 	return family + base64.RawURLEncoding.EncodeToString(m.Sum(nil)[:12])
+}
+
+// trapRef is sealed into the hidden link of a frame page.
+type trapRef struct {
+	ID      string `json:"i"`
+	Expires int64  `json:"x"`
+}
+
+const trapTTL = 15 * time.Minute
+
+// newTrap returns a sealed reference for a frame page's hidden link.
+func (s *Server) newTrap() string {
+	sealed, err := s.trapBox.Seal(trapRef{ID: randomID(), Expires: s.now().Add(trapTTL).Unix()})
+	if err != nil {
+		return ""
+	}
+	return sealed
+}
+
+// openTrap returns the trap ID, or "" for a missing, forged or expired value.
+func (s *Server) openTrap(sealed string) string {
+	var t trapRef
+	if sealed == "" || s.trapBox.Open(sealed, &t) != nil || s.now().Unix() > t.Expires {
+		return ""
+	}
+	return t.ID
 }
 
 // siteRate counts this site's challenges in the current minute. It is only kept
