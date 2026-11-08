@@ -89,9 +89,23 @@ a { color: var(--accent); }
 .film {
   position: absolute; inset: 0; image-rendering: pixelated; background-repeat: no-repeat;
   background-position: 0 0; animation-name: sc-film; animation-iteration-count: infinite;
-  animation-timing-function: steps(var(--frames), jump-none); animation-play-state: paused;
+  animation-timing-function: steps(var(--frames), jump-none); animation-play-state: running;
 }
-.film.playing { animation-play-state: running; }
+.motion-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.motion-toggle { display: block; text-align: center; }
+.motion-input:focus-visible + .motion-toggle { outline: 2px solid var(--accent); outline-offset: 2px; }
+.motion-input:checked ~ .kinetic .film { animation-play-state: paused; }
+.motion-toggle .when-paused,
+.motion-input:checked + .motion-toggle .when-running { display: none; }
+.motion-input:checked + .motion-toggle .when-paused { display: inline; }
+@media (prefers-reduced-motion: reduce) {
+  .film { animation-play-state: paused; }
+  .motion-input:checked ~ .kinetic .film { animation-play-state: running; }
+  .motion-toggle .when-running,
+  .motion-input:checked + .motion-toggle .when-paused { display: none; }
+  .motion-toggle .when-paused,
+  .motion-input:checked + .motion-toggle .when-running { display: inline; }
+}
 @keyframes sc-film { to { background-position: 0 100%; } }
 .kinetic .cell { border: 1px solid rgba(255, 255, 255, .35); }
 .motion-note { display: none; }

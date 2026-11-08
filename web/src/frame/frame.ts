@@ -662,7 +662,7 @@ function cellGrid(stage: HTMLElement, p: PuzzlePublic): Set<number> {
 // The frames are one sprite sheet that CSS steps through, so no script draws
 // anything and the animation runs only after Play.
 function kineticView(box: HTMLElement, p: PuzzlePublic): () => number[] {
-  box.append(el('p', '', t.kinetic));
+  box.append(el('p', '', t.kineticAuto));
   const note = el('p', 'muted motion-note', t.motionNote);
   const stage = el('div', 'stage kinetic');
   const film = el('div', 'film');
@@ -672,15 +672,16 @@ function kineticView(box: HTMLElement, p: PuzzlePublic): () => number[] {
   film.style.setProperty('--frames', String(p.frames ?? 1));
   stage.append(film);
   const chosen = cellGrid(stage, p);
-  const toggle = el('button', 'secondary', t.play);
-  toggle.type = 'button';
-  toggle.setAttribute('aria-pressed', 'false');
-  toggle.addEventListener('click', () => {
-    const playing = film.classList.toggle('playing');
-    toggle.textContent = playing ? t.pause : t.play;
-    toggle.setAttribute('aria-pressed', String(playing));
-  });
-  box.append(toggle, stage, note);
+  // The motion starts by itself, since a task only opens after a deliberate action.
+  // A checkbox toggles it and CSS does the rest: with "reduce motion" set the film
+  // starts still and the checkbox plays it. No script reads that preference.
+  const toggle = el('input', 'motion-input');
+  toggle.type = 'checkbox';
+  toggle.id = 'motion-toggle';
+  const label = el('label', 'secondary motion-toggle');
+  label.htmlFor = toggle.id;
+  label.append(el('span', 'when-running', t.pause), el('span', 'when-paused', t.play));
+  box.append(toggle, label, stage, note);
   return () => [...chosen];
 }
 
