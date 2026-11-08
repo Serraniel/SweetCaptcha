@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.0-beta.1](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.0...v0.1.0-beta.1) (2026-11-08)
+
+
+### Features
+
+* add a help page for blocked visitors and a compatibility matrix ([#53](https://github.com/Serraniel/SweetCaptcha/issues/53)) ([a85bd87](https://github.com/Serraniel/SweetCaptcha/commit/a85bd87d38011e0286bb42dad05879db0a97a5a3)), closes [#43](https://github.com/Serraniel/SweetCaptcha/issues/43)
+* add a hidden trap link for scrapers that follow every link ([#56](https://github.com/Serraniel/SweetCaptcha/issues/56)) ([279fce2](https://github.com/Serraniel/SweetCaptcha/commit/279fce26b66fe426d9f6282b4849d76ceec4b849)), closes [#46](https://github.com/Serraniel/SweetCaptcha/issues/46)
+* add an optional Prometheus metrics endpoint ([#55](https://github.com/Serraniel/SweetCaptcha/issues/55)) ([44c87b4](https://github.com/Serraniel/SweetCaptcha/commit/44c87b4e1b279a3a01bb869fbbb011dba0fd3377)), closes [#44](https://github.com/Serraniel/SweetCaptcha/issues/44)
+* add per-site rules that adjust scoring or force an outcome ([#50](https://github.com/Serraniel/SweetCaptcha/issues/50)) ([2a54b16](https://github.com/Serraniel/SweetCaptcha/commit/2a54b1652e10f49579f89e10e98b95058d82d09a))
+* benchmark proof of work and retry memory failures with one worker ([#52](https://github.com/Serraniel/SweetCaptcha/issues/52)) ([b4faaac](https://github.com/Serraniel/SweetCaptcha/commit/b4faaacd89a64b6be69ee4998dc578e20c1f0331)), closes [#42](https://github.com/Serraniel/SweetCaptcha/issues/42)
+* link the site's privacy notice and imprint from the widget ([#54](https://github.com/Serraniel/SweetCaptcha/issues/54)) ([95c32f4](https://github.com/Serraniel/SweetCaptcha/commit/95c32f415bea137f2b66094c21709231135666a7)), closes [#45](https://github.com/Serraniel/SweetCaptcha/issues/45)
+* play the motion task automatically ([#58](https://github.com/Serraniel/SweetCaptcha/issues/58)) ([ff80e23](https://github.com/Serraniel/SweetCaptcha/commit/ff80e234adb3d0cf7a8e1bcab3ae8571eae68bca)), closes [#57](https://github.com/Serraniel/SweetCaptcha/issues/57)
+* remember hard failures per network for 30 minutes ([#51](https://github.com/Serraniel/SweetCaptcha/issues/51)) ([f77213b](https://github.com/Serraniel/SweetCaptcha/commit/f77213ba5bc71762460091e04f2823afeb67bb3c)), closes [#40](https://github.com/Serraniel/SweetCaptcha/issues/40)
+
+
+### Bug Fixes
+
+* keep dual-stack visitors from failing token binding ([#47](https://github.com/Serraniel/SweetCaptcha/issues/47)) ([2324bd1](https://github.com/Serraniel/SweetCaptcha/commit/2324bd1f7fb72ea6fd5f7e4f5b7e0d034775aa46)), closes [#38](https://github.com/Serraniel/SweetCaptcha/issues/38)
+
+
+### Documentation
+
+* state the beta status and open gaps in the README ([#59](https://github.com/Serraniel/SweetCaptcha/issues/59)) ([c9264d1](https://github.com/Serraniel/SweetCaptcha/commit/c9264d1138bce58d750251c6986307416b4bf4f2))
+
 ## 0.1.0 (2026-11-08)
 
 
