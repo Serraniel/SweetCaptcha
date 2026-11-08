@@ -1,6 +1,6 @@
 # Lab results
 
-Run on 2026-11-07 against Chromium 156, by `npm run lab` in `lab/`. This file is generated.
+Run on 2026-11-08 against Chromium 156, by `npm run lab` in `lab/`. This file is generated.
 
 These are outcomes against one browser on one machine. They show how the rules behave against each tool, not how often real attacks succeed, and they contain no test with real people. See the limits in the README.
 
@@ -19,6 +19,7 @@ These are outcomes against one browser on one machine. They show how the rules b
 | Strict mode: no device reads, storage, or third parties | Privacy | clean | clean |  |
 | Audit control: the same audit does find reads on a standard site | Privacy | violation | violation |  |
 | Strict mode: all four provider form flows | Compatibility | pass | pass |  |
+| Base proof of work: time to token in strict mode, this machine | Mechanics | fast | fast | `median 261 ms` `max 346 ms` |
 | reCAPTCHA v3, Turnstile and hCaptcha JavaScript APIs | Compatibility | pass | pass |  |
 | Checkbox step, with scrypt proof of work in the browser | Mechanics | pass (checkbox, score 0.79) | pass | `env_software_gpu` `obs_cdp` |
 | Puzzle interface, then the wait path | Mechanics | pass (wait, score 0.86) | pass | `env_software_gpu` `obs_cdp` |

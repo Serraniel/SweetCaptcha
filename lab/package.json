@@ -3,9 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lab": "node run.mjs"
+    "lab": "node run.mjs",
+    "adversarial": "node adversarial.mjs"
   },
   "dependencies": {
-    "playwright-core": "1.65.0"
+    "patchright": "1.64.3",
+    "playwright-core": "1.65.0",
+    "puppeteer-core": "25.16.0",
+    "puppeteer-extra": "3.3.6",
+    "puppeteer-extra-plugin-stealth": "2.11.2",
+    "rebrowser-playwright-core": "1.64.102"
   }
 }
