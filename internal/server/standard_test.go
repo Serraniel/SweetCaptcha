@@ -4,8 +4,10 @@ package server
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -553,5 +555,42 @@ func TestNetworkRemembersHardFailures(t *testing.T) {
 	reasons, _ := json.Marshal(m["reasons"])
 	if !strings.Contains(string(reasons), "net_recent_failures") {
 		t.Errorf("expected net_recent_failures: %s", reasons)
+	}
+}
+
+func TestTrapLinkMarksTheChallenge(t *testing.T) {
+	s, ts := newTest(t, stdSite)
+	run := func(follow bool) []string {
+		trap := s.newTrap()
+		if follow {
+			resp, err := http.Get(ts.URL + "/v1/t/" + trap)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp.Body.Close()
+		}
+		_, ch := postJSON(t, ts.URL+"/v1/challenge", map[string]string{"sitekey": "sitekey_std", "hostname": "example.com", "trap": trap}, browserHeaders...)
+		nonce := ch["collect"].(map[string]any)["nonce"].(string)
+		r := submit(t, ts, ch, goodSignals(nonce), browserHeaders...)
+		if r["token"] == nil {
+			return []string{"escalated:" + r["status"].(string)}
+		}
+		m := verifyForm(t, ts.URL+"/v1/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
+		var reasons []string
+		for _, v := range m["reasons"].([]any) {
+			reasons = append(reasons, v.(string))
+		}
+		return reasons
+	}
+	if got := run(false); slices.Contains(got, "proto_trap_link") || len(got) > 0 && strings.HasPrefix(got[0], "escalated") {
+		t.Errorf("visitor who never fetched the link was marked: %v", got)
+	}
+	if got := run(true); len(got) == 0 || !strings.HasPrefix(got[0], "escalated") {
+		t.Errorf("following the hidden link must escalate: %v", got)
+	}
+	// A forged trap value is ignored rather than trusted.
+	_, ch := postJSON(t, ts.URL+"/v1/challenge", map[string]string{"sitekey": "sitekey_std", "hostname": "example.com", "trap": "forged"}, browserHeaders...)
+	if ch["c"] == nil {
+		t.Fatalf("forged trap value broke the challenge: %v", ch)
 	}
 }

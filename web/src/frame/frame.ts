@@ -272,7 +272,8 @@ async function run(action: string, cdata: string): Promise<void> {
   const showProgress = busyWithProgress(t.verifying);
   let reply: ChallengeReply;
   try {
-    reply = await post<ChallengeReply>('/v1/challenge', { sitekey: siteKey, action, hostname, cdata });
+    const trap = document.querySelector<HTMLAnchorElement>('a.t[data-trap]')?.dataset.trap ?? '';
+    reply = await post<ChallengeReply>('/v1/challenge', { sitekey: siteKey, action, hostname, cdata, trap });
   } catch {
     return showError('network-error');
   }

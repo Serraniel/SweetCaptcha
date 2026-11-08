@@ -316,6 +316,20 @@ async function run() {
       return outcome(page, 'lab_standard');
     }));
 
+  // A careless scraper: it parses the frame's raw HTML and fetches every link, then
+  // forges a perfect signal document. The hidden link gives it away.
+  await scenario('Raw-HTML scraper following every link, then forging signals', 'Forged protocol', ['interact', 'puzzle'], async () => {
+    const html = await (await fetch(`${BASE}/v1/frame?k=lab_standard`, { headers: { 'User-Agent': ua } })).text();
+    const links = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((h) => h.startsWith('/v1/t/'));
+    for (const href of links) await fetch(BASE + href, { headers: { 'User-Agent': ua } });
+    const trap = links[0]?.slice('/v1/t/'.length) ?? '';
+    const headers = browserHeaders(ua);
+    const ch = await (await fetch(`${BASE}/v1/challenge`, { method: 'POST', headers, body: JSON.stringify({ sitekey: 'lab_standard', hostname: 'localhost', trap }) })).json();
+    const body = { c: ch.c, nonces: solveSha256(ch.pow), signals: forgedSignals(ua, major)(ch.collect?.nonce) };
+    const res = await (await fetch(`${BASE}/v1/submit`, { method: 'POST', headers, body: JSON.stringify(body) })).json();
+    return { result: links.length ? res.status : 'no-link', reasons: [] };
+  });
+
   await scenario('Network memory: a clean visitor after three forged requests from the same network', 'Mechanics', 'remembered', async () => {
     for (let i = 0; i < 3; i++) await httpBot(ua, null, BASE, 'lab_netmem');
     const r = await httpBot(ua, forgedSignals(ua, major), BASE, 'lab_netmem');
