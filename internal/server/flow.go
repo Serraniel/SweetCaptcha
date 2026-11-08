@@ -171,9 +171,9 @@ func (s *Server) handleChallenge(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, challengeResponse{Challenge: sealed, Pow: view, Mode: site.Mode, Collect: collect})
 }
 
-// networkPseudonym returns a keyed hash of the address's /24 (IPv4) or /48 (IPv6).
-// It is sealed inside a token and never stored, so a fixed key does not link
-// anything across tokens.
+// networkPseudonym returns a keyed hash of the address's /24 (IPv4) or /48 (IPv6),
+// prefixed with the IP family. It is sealed inside a token and never stored, so a
+// fixed key does not link anything across tokens.
 func (s *Server) networkPseudonym(addr netip.Addr) string {
 	if !addr.IsValid() {
 		return ""
@@ -188,7 +188,11 @@ func (s *Server) networkPseudonym(addr netip.Addr) string {
 	}
 	m := hmac.New(sha256.New, s.ring.Derive("bind", ""))
 	m.Write([]byte(prefix.String()))
-	return base64.RawURLEncoding.EncodeToString(m.Sum(nil)[:12])
+	family := "6."
+	if addr.Is4() {
+		family = "4."
+	}
+	return family + base64.RawURLEncoding.EncodeToString(m.Sum(nil)[:12])
 }
 
 // siteRate counts this site's challenges in the current minute. It is only kept

@@ -33,10 +33,13 @@ const (
 	Wait       = "wait"
 	Deny       = "deny"
 	ShadowDiff = "would_challenge"
+	// BindSkippedFamily counts bind_client checks skipped because the token was
+	// earned over another IP family than the one the site reported.
+	BindSkippedFamily = "bind_skipped_family"
 )
 
 // Base lists counters every edition records.
-var Base = []string{Issued, Passed, PowFailed, Replayed, RateLimit, Verified, VerifyFail, Interact, Puzzle, PuzzleOK, PuzzleFail, Wait, Deny, ShadowDiff}
+var Base = []string{Issued, Passed, PowFailed, Replayed, RateLimit, Verified, VerifyFail, Interact, Puzzle, PuzzleOK, PuzzleFail, Wait, Deny, ShadowDiff, BindSkippedFamily}
 
 // Recorder writes counters to a store. Failures are logged and never affect a
 // verification decision.
