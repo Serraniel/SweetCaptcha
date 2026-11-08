@@ -30,6 +30,11 @@ export interface Strings {
   waitNote: string;
   waiting: string;
   wrong: string;
+  kinetic: string;
+  play: string;
+  pause: string;
+  motionNote: string;
+  stackOrder: string;
 }
 
 export const locales: Record<string, Strings> = {
@@ -57,6 +62,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Your device runs a longer calculation instead. This takes about half a minute.',
     waiting: 'Calculating. You can leave this open.',
     wrong: 'That was not right. Here is a new one.',
+    kinetic: 'Press Play. Select every square in which a moving ring appears.',
+    play: 'Play',
+    pause: 'Pause',
+    motionNote: 'This task uses motion. If motion makes you unwell, choose “I can\'t do this task”.',
+    stackOrder: 'Which shape lies at the very back, underneath all the others?',
   },
   de: {
     verifying: 'Überprüfung läuft',
@@ -82,6 +92,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Dein Gerät führt stattdessen eine längere Berechnung aus. Das dauert etwa eine halbe Minute.',
     waiting: 'Berechnung läuft. Du kannst dieses Fenster offen lassen.',
     wrong: 'Das war nicht richtig. Hier ist eine neue Aufgabe.',
+    kinetic: 'Drücke auf Abspielen. Wähle jedes Feld, in dem ein sich bewegender Ring erscheint.',
+    play: 'Abspielen',
+    pause: 'Pause',
+    motionNote: 'Diese Aufgabe nutzt Bewegung. Wenn dir Bewegung nicht bekommt, wähle „Ich kann diese Aufgabe nicht lösen“.',
+    stackOrder: 'Welche Form liegt ganz hinten, unter allen anderen?',
   },
   fr: {
     verifying: 'Vérification en cours',
@@ -107,6 +122,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Votre appareil effectue à la place un calcul plus long. Cela prend environ une demi-minute.',
     waiting: 'Calcul en cours. Vous pouvez laisser cette fenêtre ouverte.',
     wrong: "Ce n'était pas correct. En voici une nouvelle.",
+    kinetic: 'Appuyez sur Lecture. Sélectionnez chaque case où apparaît un anneau en mouvement.',
+    play: 'Lecture',
+    pause: 'Pause',
+    motionNote: 'Cette tâche utilise du mouvement. Si le mouvement vous incommode, choisissez « Je ne peux pas faire cette tâche ».',
+    stackOrder: 'Quelle forme se trouve tout au fond, sous toutes les autres ?',
   },
   es: {
     verifying: 'Verificando',
@@ -132,6 +152,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Tu dispositivo hará un cálculo más largo en su lugar. Tarda unos treinta segundos.',
     waiting: 'Calculando. Puedes dejar esto abierto.',
     wrong: 'No era correcto. Aquí tienes otra.',
+    kinetic: 'Pulsa Reproducir. Selecciona cada casilla en la que aparezca un anillo en movimiento.',
+    play: 'Reproducir',
+    pause: 'Pausa',
+    motionNote: 'Esta tarea usa movimiento. Si el movimiento te sienta mal, elige «No puedo hacer esta tarea».',
+    stackOrder: '¿Qué forma está al fondo del todo, debajo de las demás?',
   },
   pt: {
     verifying: 'Verificando',
@@ -157,6 +182,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Seu dispositivo fará um cálculo mais longo. Isso leva cerca de meio minuto.',
     waiting: 'Calculando. Você pode deixar isto aberto.',
     wrong: 'Não estava certo. Aqui está outra.',
+    kinetic: 'Toque em Reproduzir. Selecione cada quadrado em que aparece um anel em movimento.',
+    play: 'Reproduzir',
+    pause: 'Pausar',
+    motionNote: 'Esta tarefa usa movimento. Se o movimento lhe faz mal, escolha “Não consigo fazer esta tarefa”.',
+    stackOrder: 'Qual forma está bem no fundo, por baixo de todas as outras?',
   },
   it: {
     verifying: 'Verifica in corso',
@@ -182,6 +212,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Il tuo dispositivo eseguirà invece un calcolo più lungo. Richiede circa mezzo minuto.',
     waiting: 'Calcolo in corso. Puoi lasciare aperta questa finestra.',
     wrong: 'Non era corretto. Eccone uno nuovo.',
+    kinetic: 'Premi Riproduci. Seleziona ogni casella in cui compare un anello in movimento.',
+    play: 'Riproduci',
+    pause: 'Pausa',
+    motionNote: 'Questo compito usa il movimento. Se il movimento ti dà fastidio, scegli «Non riesco a svolgere questo compito».',
+    stackOrder: 'Quale forma si trova più in fondo, sotto tutte le altre?',
   },
   nl: {
     verifying: 'Bezig met verifiëren',
@@ -207,6 +242,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Je apparaat voert in plaats daarvan een langere berekening uit. Dat duurt ongeveer een halve minuut.',
     waiting: 'Bezig met berekenen. Je kunt dit open laten.',
     wrong: 'Dat was niet juist. Hier is een nieuwe.',
+    kinetic: 'Druk op Afspelen. Selecteer elk vak waarin een bewegende ring verschijnt.',
+    play: 'Afspelen',
+    pause: 'Pauzeren',
+    motionNote: 'Deze taak gebruikt beweging. Als beweging je onwel maakt, kies dan ‘Ik kan deze taak niet doen’.',
+    stackOrder: 'Welke vorm ligt helemaal achteraan, onder alle andere?',
   },
   pl: {
     verifying: 'Trwa weryfikacja',
@@ -232,6 +272,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Twoje urządzenie wykona zamiast tego dłuższe obliczenie. Trwa to około pół minuty.',
     waiting: 'Trwa obliczanie. Możesz zostawić to okno otwarte.',
     wrong: 'To nie było poprawne. Oto nowe zadanie.',
+    kinetic: 'Naciśnij Odtwórz. Zaznacz każde pole, w którym pojawia się poruszający się pierścień.',
+    play: 'Odtwórz',
+    pause: 'Wstrzymaj',
+    motionNote: 'To zadanie wykorzystuje ruch. Jeśli ruch źle na ciebie działa, wybierz „Nie mogę wykonać tego zadania”.',
+    stackOrder: 'Który kształt leży na samym spodzie, pod wszystkimi innymi?',
   },
   cs: {
     verifying: 'Probíhá ověření',
@@ -257,6 +302,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Vaše zařízení místo toho provede delší výpočet. Trvá asi půl minuty.',
     waiting: 'Probíhá výpočet. Toto okno můžete nechat otevřené.',
     wrong: 'To nebylo správně. Tady je nový úkol.',
+    kinetic: 'Stiskněte Přehrát. Vyberte každé pole, ve kterém se objeví pohybující se kroužek.',
+    play: 'Přehrát',
+    pause: 'Pozastavit',
+    motionNote: 'Tento úkol využívá pohyb. Pokud vám pohyb nedělá dobře, zvolte „Tento úkol nezvládnu“.',
+    stackOrder: 'Který tvar leží úplně vzadu, pod všemi ostatními?',
   },
   sv: {
     verifying: 'Verifierar',
@@ -282,6 +332,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Din enhet gör en längre beräkning i stället. Det tar ungefär en halv minut.',
     waiting: 'Beräknar. Du kan lämna detta öppet.',
     wrong: 'Det var inte rätt. Här är en ny.',
+    kinetic: 'Tryck på Spela. Välj varje ruta där en rörlig ring visas.',
+    play: 'Spela',
+    pause: 'Pausa',
+    motionNote: 'Den här uppgiften använder rörelse. Om rörelse får dig att må dåligt, välj ”Jag kan inte göra den här uppgiften”.',
+    stackOrder: 'Vilken form ligger längst bak, under alla andra?',
   },
   ru: {
     verifying: 'Идёт проверка',
@@ -307,6 +362,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Вместо этого ваше устройство выполнит более долгое вычисление. Это займёт около полуминуты.',
     waiting: 'Идёт вычисление. Можно оставить это окно открытым.',
     wrong: 'Неверно. Вот новое задание.',
+    kinetic: 'Нажмите «Воспроизвести». Выберите все клетки, в которых появляется движущееся кольцо.',
+    play: 'Воспроизвести',
+    pause: 'Пауза',
+    motionNote: 'В этом задании есть движение. Если движение вызывает у вас дискомфорт, выберите «Я не могу выполнить это задание».',
+    stackOrder: 'Какая фигура лежит в самом низу, под всеми остальными?',
   },
   uk: {
     verifying: 'Триває перевірка',
@@ -332,6 +392,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Натомість ваш пристрій виконає довше обчислення. Це триває близько пів хвилини.',
     waiting: 'Триває обчислення. Можна залишити це вікно відкритим.',
     wrong: 'Неправильно. Ось нове завдання.',
+    kinetic: 'Натисніть «Відтворити». Виберіть кожну клітинку, у якій з\'являється рухоме кільце.',
+    play: 'Відтворити',
+    pause: 'Пауза',
+    motionNote: 'У цьому завданні є рух. Якщо рух викликає у вас дискомфорт, виберіть «Я не можу виконати це завдання».',
+    stackOrder: 'Яка фігура лежить у самому низу, під усіма іншими?',
   },
   tr: {
     verifying: 'Doğrulanıyor',
@@ -357,6 +422,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Cihazınız bunun yerine daha uzun bir hesaplama yapar. Bu yaklaşık yarım dakika sürer.',
     waiting: 'Hesaplanıyor. Bunu açık bırakabilirsiniz.',
     wrong: 'Doğru değildi. İşte yeni bir tane.',
+    kinetic: 'Oynat\'a basın. Hareketli bir halkanın göründüğü her kareyi seçin.',
+    play: 'Oynat',
+    pause: 'Duraklat',
+    motionNote: 'Bu görev hareket içerir. Hareket sizi rahatsız ediyorsa “Bu görevi yapamıyorum” seçeneğini seçin.',
+    stackOrder: 'Hangi şekil en altta, diğerlerinin hepsinin altında?',
   },
   ar: {
     verifying: 'جارٍ التحقق',
@@ -382,6 +452,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'سيُجري جهازك بدلاً من ذلك حساباً أطول. يستغرق ذلك نحو نصف دقيقة.',
     waiting: 'جارٍ الحساب. يمكنك ترك هذه النافذة مفتوحة.',
     wrong: 'لم تكن الإجابة صحيحة. إليك مهمة جديدة.',
+    kinetic: 'اضغط على تشغيل. اختر كل مربع يظهر فيه حلقة متحركة.',
+    play: 'تشغيل',
+    pause: 'إيقاف مؤقت',
+    motionNote: 'تستخدم هذه المهمة الحركة. إذا كانت الحركة تزعجك، فاختر «لا أستطيع أداء هذه المهمة».',
+    stackOrder: 'أي شكل يقع في الخلف تماماً، تحت جميع الأشكال الأخرى؟',
   },
   hi: {
     verifying: 'सत्यापन हो रहा है',
@@ -407,6 +482,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'इसके बजाय आपका डिवाइस एक लंबी गणना करेगा। इसमें लगभग आधा मिनट लगता है।',
     waiting: 'गणना हो रही है। आप इसे खुला छोड़ सकते हैं।',
     wrong: 'यह सही नहीं था। यह रहा नया काम।',
+    kinetic: 'चलाएँ दबाएँ। हर वह खाना चुनें जिसमें चलता हुआ छल्ला दिखे।',
+    play: 'चलाएँ',
+    pause: 'रोकें',
+    motionNote: 'इस काम में हलचल है। अगर हलचल से आपको परेशानी होती है, तो “मैं यह काम नहीं कर सकता” चुनें।',
+    stackOrder: 'कौन-सा आकार सबसे पीछे है, बाकी सभी के नीचे?',
   },
   id: {
     verifying: 'Sedang memverifikasi',
@@ -432,6 +512,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Perangkat Anda akan menjalankan perhitungan yang lebih lama. Ini memakan waktu sekitar setengah menit.',
     waiting: 'Sedang menghitung. Anda bisa membiarkan ini terbuka.',
     wrong: 'Itu belum benar. Ini tugas baru.',
+    kinetic: 'Tekan Putar. Pilih setiap kotak yang memperlihatkan cincin bergerak.',
+    play: 'Putar',
+    pause: 'Jeda',
+    motionNote: 'Tugas ini menggunakan gerakan. Jika gerakan membuat Anda tidak nyaman, pilih “Saya tidak bisa mengerjakan tugas ini”.',
+    stackOrder: 'Bentuk mana yang paling belakang, di bawah semua bentuk lain?',
   },
   vi: {
     verifying: 'Đang xác minh',
@@ -457,6 +542,11 @@ export const locales: Record<string, Strings> = {
     waitNote: 'Thay vào đó, thiết bị của bạn sẽ thực hiện một phép tính lâu hơn. Mất khoảng nửa phút.',
     waiting: 'Đang tính toán. Bạn có thể để cửa sổ này mở.',
     wrong: 'Chưa đúng. Đây là nhiệm vụ mới.',
+    kinetic: 'Nhấn Phát. Chọn mọi ô có một vòng tròn chuyển động xuất hiện.',
+    play: 'Phát',
+    pause: 'Tạm dừng',
+    motionNote: 'Nhiệm vụ này có chuyển động. Nếu chuyển động khiến bạn khó chịu, hãy chọn “Tôi không làm được nhiệm vụ này”.',
+    stackOrder: 'Hình nào nằm ở dưới cùng, bên dưới tất cả các hình khác?',
   },
   zh: {
     verifying: '正在验证',
@@ -482,6 +572,11 @@ export const locales: Record<string, Strings> = {
     waitNote: '您的设备将改为进行更长时间的计算，大约需要半分钟。',
     waiting: '正在计算，您可以保持此窗口打开。',
     wrong: '不正确，请完成新的任务。',
+    kinetic: '点击播放。选出所有出现移动圆环的方格。',
+    play: '播放',
+    pause: '暂停',
+    motionNote: '此任务包含动画。如果动画让您不适，请选择“我无法完成此任务”。',
+    stackOrder: '哪个图形在最底层，压在所有其他图形下面？',
   },
   'zh-TW': {
     verifying: '正在驗證',
@@ -507,6 +602,11 @@ export const locales: Record<string, Strings> = {
     waitNote: '您的裝置將改為進行較長時間的計算，大約需要半分鐘。',
     waiting: '正在計算，您可以保持此視窗開啟。',
     wrong: '不正確，請完成新的任務。',
+    kinetic: '點擊播放。選出所有出現移動圓環的方格。',
+    play: '播放',
+    pause: '暫停',
+    motionNote: '此任務包含動畫。如果動畫讓您不適，請選擇「我無法完成此任務」。',
+    stackOrder: '哪個圖形在最底層，壓在所有其他圖形下面？',
   },
   ja: {
     verifying: '確認しています',
@@ -532,6 +632,11 @@ export const locales: Record<string, Strings> = {
     waitNote: '代わりに端末が長めの計算を行います。30秒ほどかかります。',
     waiting: '計算しています。このまま開いておいてください。',
     wrong: '正しくありませんでした。新しい課題です。',
+    kinetic: '再生を押してください。動くリングが現れるマスをすべて選んでください。',
+    play: '再生',
+    pause: '一時停止',
+    motionNote: 'この課題には動きがあります。動きで気分が悪くなる場合は「この課題ができません」を選んでください。',
+    stackOrder: '一番下（ほかのすべての図形の下）にある図形はどれですか？',
   },
   ko: {
     verifying: '확인하는 중',
@@ -557,6 +662,11 @@ export const locales: Record<string, Strings> = {
     waitNote: '대신 기기가 더 긴 계산을 수행합니다. 약 30초 정도 걸립니다.',
     waiting: '계산하는 중입니다. 이 창을 열어 두셔도 됩니다.',
     wrong: '정답이 아닙니다. 새 과제입니다.',
+    kinetic: '재생을 누르세요. 움직이는 고리가 나타나는 칸을 모두 선택하세요.',
+    play: '재생',
+    pause: '일시정지',
+    motionNote: '이 과제에는 움직임이 있습니다. 움직임 때문에 불편하면 ‘이 과제를 할 수 없습니다’를 선택하세요.',
+    stackOrder: '다른 모든 도형 아래, 맨 뒤에 있는 도형은 무엇인가요?',
   },
 };
 

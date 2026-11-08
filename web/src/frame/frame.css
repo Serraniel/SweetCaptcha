@@ -82,3 +82,15 @@ a { color: var(--accent); }
 .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
 .t { position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.kinetic { aspect-ratio: 1; max-width: 320px; margin: 0 auto; }
+.film {
+  position: absolute; inset: 0; image-rendering: pixelated; background-repeat: no-repeat;
+  background-position: 0 0; animation-name: sc-film; animation-iteration-count: infinite;
+  animation-timing-function: steps(var(--frames), jump-none); animation-play-state: paused;
+}
+.film.playing { animation-play-state: running; }
+@keyframes sc-film { to { background-position: 0 100%; } }
+.kinetic .cell { border: 1px solid rgba(255, 255, 255, .35); }
+.motion-note { display: none; }
+@media (prefers-reduced-motion: reduce) { .motion-note { display: block; } }

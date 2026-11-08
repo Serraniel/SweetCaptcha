@@ -24,7 +24,7 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `policy.on_definitive` | `deny` | Or `puzzle`. |
 | `policy.score_only` | `false` | Never show a checkbox or task, like reCAPTCHA v3: every request gets a token, and the site must reject low scores itself. Use it only where the backend checks `score`, or a bot gets a valid token. |
 | `limits` | 30 and 300 per minute; 5 waits per hour | Above soft, difficulty rises. Above hard, requests get HTTP 429. `wait_per_hour` caps the wait path per address, and shared addresses share the cap. |
-| `puzzles` | all three | Disable a family if its solve rate climbs. |
+| `puzzles` | `line-trace`, `gap-rings`, `kinetic`, `stack-order` | `rotate-match` is also available. Disable a family if its solve rate climbs. |
 | `wait_fallback` | `true` | Lets coherent browsers leave a puzzle for a long calculation. Never offered to clients with contradictions or automation markers. If you turn it off, people who can't do visual tasks need another route, such as `support_url`. |
 | `support_url` | none | Shown on a deny and beside puzzles. |
 | `test_mode` | none | `pass` or `fail` for integrator tests. Never use it in production. |

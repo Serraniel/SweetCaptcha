@@ -106,6 +106,9 @@ interface PuzzlePublic {
   columns?: number;
   rows?: number;
   markers?: number;
+  frames?: number;
+  fps?: number;
+  frameSize?: number;
 }
 
 interface SubmitReply {
@@ -465,6 +468,8 @@ function showPuzzle(r: SubmitReply, action: string, cdata: string, mine: number,
   let collect: () => number[];
   if (p.family === 'line-trace') collect = lineTraceView(box, p);
   else if (p.family === 'gap-rings') collect = gapRingsView(box, p);
+  else if (p.family === 'kinetic') collect = kineticView(box, p);
+  else if (p.family === 'stack-order') collect = stackOrderView(box, p);
   else collect = rotateView(box, p);
 
   const submit = el('button', 'primary', t.submit);
@@ -576,6 +581,13 @@ function gapRingsView(box: HTMLElement, p: PuzzlePublic): () => number[] {
   box.append(el('p', '', t.gapRings));
   const stage = el('div', 'stage');
   stage.append(image(p.images[0]));
+  const chosen = cellGrid(stage, p);
+  box.append(stage);
+  return () => [...chosen];
+}
+
+// Selectable cells laid over a picture, shared by the grid tasks.
+function cellGrid(stage: HTMLElement, p: PuzzlePublic): Set<number> {
   const grid = el('div', 'grid');
   grid.style.gridTemplateColumns = `repeat(${p.columns}, 1fr)`;
   grid.style.gridTemplateRows = `repeat(${p.rows}, 1fr)`;
@@ -592,8 +604,55 @@ function gapRingsView(box: HTMLElement, p: PuzzlePublic): () => number[] {
     grid.append(b);
   }
   stage.append(grid);
-  box.append(stage);
+  return chosen;
+}
+
+// The frames are one sprite sheet that CSS steps through, so no script draws
+// anything and the animation runs only after Play.
+function kineticView(box: HTMLElement, p: PuzzlePublic): () => number[] {
+  box.append(el('p', '', t.kinetic));
+  const note = el('p', 'muted motion-note', t.motionNote);
+  const stage = el('div', 'stage kinetic');
+  const film = el('div', 'film');
+  film.style.backgroundImage = `url("${p.images[0]}")`;
+  film.style.backgroundSize = `100% ${(p.frames ?? 1) * 100}%`;
+  film.style.animationDuration = `${(p.frames ?? 1) / (p.fps ?? 25)}s`;
+  film.style.setProperty('--frames', String(p.frames ?? 1));
+  stage.append(film);
+  const chosen = cellGrid(stage, p);
+  const toggle = el('button', 'secondary', t.play);
+  toggle.type = 'button';
+  toggle.setAttribute('aria-pressed', 'false');
+  toggle.addEventListener('click', () => {
+    const playing = film.classList.toggle('playing');
+    toggle.textContent = playing ? t.pause : t.play;
+    toggle.setAttribute('aria-pressed', String(playing));
+  });
+  box.append(toggle, stage, note);
   return () => [...chosen];
+}
+
+function stackOrderView(box: HTMLElement, p: PuzzlePublic): () => number[] {
+  box.append(el('p', '', t.stackOrder));
+  const stage = el('div', 'stage');
+  stage.append(image(p.images[0]));
+  box.append(stage);
+  let answer = -1;
+  const row = el('div', 'choices');
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', t.stackOrder);
+  for (let i = 0; i < (p.options ?? 0); i++) {
+    const b = el('button', 'choice', String(i + 1));
+    b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      answer = i;
+      row.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    row.append(b);
+  }
+  box.append(row);
+  return () => [answer];
 }
 
 function rotateView(box: HTMLElement, p: PuzzlePublic): () => number[] {

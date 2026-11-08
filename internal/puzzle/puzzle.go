@@ -26,10 +26,16 @@ const (
 	LineTrace   = "line-trace"
 	GapRings    = "gap-rings"
 	RotateMatch = "rotate-match"
+	Kinetic     = "kinetic"
+	StackOrder  = "stack-order"
 )
 
 // Families lists every implemented family.
-var Families = []string{LineTrace, GapRings, RotateMatch}
+var Families = []string{LineTrace, GapRings, RotateMatch, Kinetic, StackOrder}
+
+// DefaultFamilies are used when a site configures none. Rotate-match is left out:
+// few-shot prompting nearly breaks it.
+var DefaultFamilies = []string{LineTrace, GapRings, Kinetic, StackOrder}
 
 // Public is what the client sees. It never contains the answer.
 type Public struct {
@@ -41,6 +47,11 @@ type Public struct {
 	Rows    int `json:"rows,omitempty"`
 	// Markers is the number of questions to answer in a line-trace.
 	Markers int `json:"markers,omitempty"`
+	// Frames, FPS and FrameSize describe the kinetic sprite sheet: Images[0] holds
+	// Frames square frames of FrameSize pixels, one below the other.
+	Frames    int `json:"frames,omitempty"`
+	FPS       int `json:"fps,omitempty"`
+	FrameSize int `json:"frameSize,omitempty"`
 }
 
 // Answer is kept in the store and compared on submission.
@@ -63,6 +74,10 @@ func Generate(family string) (Public, Answer, error) {
 		return gapRings(r)
 	case RotateMatch:
 		return rotateMatch(r)
+	case Kinetic:
+		return kinetic(r)
+	case StackOrder:
+		return stackOrder(r)
 	}
 	return Public{}, Answer{}, fmt.Errorf("unknown puzzle family %q", family)
 }
@@ -78,9 +93,9 @@ func Pick(allowed []string) (string, error) {
 // Check compares a submission with the stored answer.
 func Check(a Answer, submitted []int) bool {
 	switch a.Family {
-	case LineTrace:
+	case LineTrace, StackOrder:
 		return slices.Equal(a.Values, submitted)
-	case GapRings:
+	case GapRings, Kinetic:
 		got := slices.Clone(submitted)
 		slices.Sort(got)
 		return slices.Equal(a.Values, slices.Compact(got))
@@ -113,6 +128,9 @@ func DecodeAnswer(s string) (Answer, error) {
 var (
 	paper = color.NRGBA{244, 245, 247, 255}
 	ink   = color.NRGBA{58, 66, 82, 255}
+	// color3 and paperInk draw the number tags in the stack-order task.
+	color3   = color.NRGBA{58, 66, 82, 255}
+	paperInk = color.NRGBA{244, 245, 247, 255}
 	// lineInk is one colour for every line. See lineTrace.
 	lineInk = color.NRGBA{70, 96, 150, 255}
 )
