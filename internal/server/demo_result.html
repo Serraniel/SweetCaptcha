@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"{{if ne .Theme "auto"}} data-theme="{{.Theme}}"{{end}}>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Result</title>
+<style>{{.CSS}}</style>
+<main>
+<h1>Server-side result</h1>
+<p>This is the complete response your backend would receive from <code>siteverify</code>.</p>
+<pre id="result">{{.Body}}</pre>
+<p><a href="{{.Back}}">Back</a></p>
+<h2>What the fields mean</h2>
+<table>{{range .Fields}}<tr><td>{{index . 0}}</td><td>{{index . 1}}</td></tr>{{end}}</table>
+</main>

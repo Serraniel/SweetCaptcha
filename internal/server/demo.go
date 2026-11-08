@@ -3,20 +3,42 @@ package server
 import (
 	_ "embed"
 	"encoding/json"
-	"html"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/Serraniel/SweetCaptcha/internal/edition"
 )
 
 //go:embed demo.html
-var demoHTML string
+var demoPageSource string
+
+//go:embed demo_result.html
+var demoResultSource string
 
 //go:embed demo.css
 var demoCSS string
+
+// The demo pages use html/template, which escapes every value for its context.
+// Only the stylesheet is passed as trusted CSS: it is a constant embedded at build
+// time and never contains request data.
+var demoStyle = template.CSS(demoCSS) //nolint:gosec // A build-time constant.
+
+var (
+	demoPage   = template.Must(template.New("demo").Parse(demoPageSource))
+	demoResult = template.Must(template.New("result").Parse(demoResultSource))
+)
+
+type demoLink struct {
+	Name, URL string
+	Current   bool
+}
+
+type demoSite struct {
+	Name, Mode string
+	Links      []demoLink
+}
 
 // demoTheme accepts only known values, because the result is written into pages.
 func demoTheme(v string) string {
@@ -24,13 +46,6 @@ func demoTheme(v string) string {
 		return v
 	}
 	return "auto"
-}
-
-func demoThemeAttr(theme string) string {
-	if theme == "auto" {
-		return ""
-	}
-	return ` data-theme="` + theme + `"`
 }
 
 func demoURL(provider, key, theme string) string {
@@ -75,33 +90,27 @@ func (s *Server) demoRoutes(mux *http.ServeMux) {
 			key = s.cfg.Sites[0].SiteKey
 		}
 		theme := demoTheme(r.URL.Query().Get("theme"))
-		var themes strings.Builder
+		var themes []demoLink
 		for _, name := range []string{"auto", "light", "dark"} {
-			current := ""
-			if name == theme {
-				current = ` aria-current="true"`
-			}
-			themes.WriteString(`<a href="` + html.EscapeString(demoURL(provider, key, name)) + `"` + current + `>` + name + `</a>`)
+			themes = append(themes, demoLink{Name: name, URL: demoURL(provider, key, name), Current: name == theme})
 		}
-		var links strings.Builder
+		var sites []demoSite
 		for i := range s.cfg.Sites {
 			site := &s.cfg.Sites[i]
-			links.WriteString(`<p><strong>` + html.EscapeString(site.Name) + `</strong> (` + string(site.Mode) + ` mode): `)
+			ds := demoSite{Name: site.Name, Mode: string(site.Mode)}
 			for _, name := range []string{"native", "recaptcha", "hcaptcha", "turnstile"} {
-				links.WriteString(`<a href="` + html.EscapeString(demoURL(name, site.SiteKey, theme)) + `">` + demoAPILabels[name] + `</a> `)
+				ds.Links = append(ds.Links, demoLink{Name: demoAPILabels[name], URL: demoURL(name, site.SiteKey, theme)})
 			}
-			links.WriteString(`</p>`)
+			sites = append(sites, ds)
 		}
-		siteName := s.sites[key].Name
-		page := strings.NewReplacer(
-			"{{CSS}}", demoCSS, "{{THEME_ATTR}}", demoThemeAttr(theme), "{{THEME}}", theme, "{{THEMES}}", themes.String(),
-			"{{VERSION}}", html.EscapeString(edition.Version), "{{SCRIPT}}", p.script, "{{CLASS}}", p.class, "{{KEY}}", html.EscapeString(key),
-			"{{PROVIDER}}", provider, "{{API}}", demoAPILabels[provider], "{{SITE}}", html.EscapeString(siteName),
-			"{{MODE}}", string(s.sites[key].Mode), "{{LINKS}}", links.String(),
-		).Replace(demoHTML)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
-		if _, err := w.Write([]byte(page)); err != nil { //nolint:gosec // Every substituted value is a constant or is HTML-escaped.
+		err := demoPage.Execute(w, map[string]any{
+			"CSS": demoStyle, "Theme": theme, "Themes": themes, "Version": edition.Version,
+			"Script": p.script, "Class": p.class, "Key": key, "Provider": provider, "API": demoAPILabels[provider],
+			"Site": s.sites[key].Name, "Mode": string(s.sites[key].Mode), "Sites": sites,
+		})
+		if err != nil {
 			slog.Debug("write demo", "error", err)
 		}
 	})
@@ -130,13 +139,11 @@ func (s *Server) demoRoutes(mux *http.ServeMux) {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		theme := demoTheme(r.Form.Get("theme"))
-		var rows strings.Builder
-		for _, f := range demoFields {
-			rows.WriteString(`<tr><td>` + html.EscapeString(f[0]) + `</td><td>` + html.EscapeString(f[1]) + `</td></tr>`)
-		}
-		page := `<!doctype html><html lang="en"` + demoThemeAttr(theme) + `><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Result</title><style>` + demoCSS + `</style><main><h1>Server-side result</h1><p>This is the complete response your backend would receive from <code>siteverify</code>.</p><pre id="result">` +
-			html.EscapeString(string(body)) + `</pre><p><a href="` + html.EscapeString(demoURL(provider, site.SiteKey, theme)) + `">Back</a></p><h2>What the fields mean</h2><table>` + rows.String() + `</table></main>`
-		if _, err := w.Write([]byte(page)); err != nil { //nolint:gosec // The theme is from an allow list; all other values are HTML-escaped.
+		err = demoResult.Execute(w, map[string]any{
+			"CSS": demoStyle, "Theme": theme, "Body": string(body),
+			"Back": demoURL(provider, site.SiteKey, theme), "Fields": demoFields,
+		})
+		if err != nil {
 			slog.Debug("write demo result", "error", err)
 		}
 	})
