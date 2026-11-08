@@ -1,0 +1,39 @@
+name: Point latest at a release
+
+# Moves the latest and latest-strict image tags to an existing release, without
+# rebuilding. Releases move them automatically; this is for corrections.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released version, for example 0.1.1
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the version
+        run: |
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "not a plain release version: $VERSION" >&2; exit 1; }
+          echo "IMAGE=ghcr.io/${OWNER,,}/sweetcaptcha" >> "$GITHUB_ENV"
+        env:
+          VERSION: ${{ inputs.version }}
+          OWNER: ${{ github.repository_owner }}
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Move the tags
+        run: |
+          docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:$VERSION"
+          docker buildx imagetools create -t "$IMAGE:latest-strict" "$IMAGE:$VERSION-strict"
+          docker buildx imagetools inspect "$IMAGE:latest" --format '{{.Manifest.Digest}}'
+        env:
+          VERSION: ${{ inputs.version }}
