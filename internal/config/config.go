@@ -160,6 +160,8 @@ type Site struct {
 	SupportURL string `yaml:"support_url"`
 	// TestMode is "", "pass" or "fail": skip everything, for integrator tests.
 	TestMode string `yaml:"test_mode"`
+	// Rules are operator-defined adjustments. See docs/OPERATIONS.md.
+	Rules []Rule `yaml:"rules"`
 }
 
 // WaitAllowed reports whether the wait fallback is offered.
@@ -353,6 +355,9 @@ func (s *Site) finish() error {
 	}
 	if s.Limits.HardPerMinute == 0 {
 		s.Limits.HardPerMinute = 300
+	}
+	if err := s.finishRules(); err != nil {
+		return err
 	}
 	if s.Limits.WaitPerHour == 0 {
 		s.Limits.WaitPerHour = 5

@@ -28,7 +28,7 @@ func (s *Server) handleAdminStats(w http.ResponseWriter, r *http.Request) {
 		days = 7
 	}
 	target := 0.02
-	names := slices.Concat(stats.Base, s.std.counterNames())
+	names := slices.Concat(stats.Base, s.std.counterNames(s.cfg))
 	type siteStats struct {
 		Name    string        `json:"name"`
 		SiteKey string        `json:"sitekey"`
