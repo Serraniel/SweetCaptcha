@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.1](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.0-beta.1...v0.1.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* render the demo pages with html/template ([#66](https://github.com/Serraniel/SweetCaptcha/issues/66)) ([38b36b3](https://github.com/Serraniel/SweetCaptcha/commit/38b36b39dbeed6cf1923bc1f4d87784d7b3389c1)), closes [#65](https://github.com/Serraniel/SweetCaptcha/issues/65)
+
+
+### Documentation
+
+* fold the deleted 0.1.0 entry into the beta changelog ([#69](https://github.com/Serraniel/SweetCaptcha/issues/69)) ([2efe14f](https://github.com/Serraniel/SweetCaptcha/commit/2efe14f5dd73fba66a52c7e7b2120e838633a5e7)), closes [#68](https://github.com/Serraniel/SweetCaptcha/issues/68)
+
 ## 0.1.0-beta.1 (2026-11-08)
 
 The first public release.
