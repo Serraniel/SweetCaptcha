@@ -9,7 +9,7 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org). Rele
 | `feat!:` or a `BREAKING CHANGE:` footer | Major version (minor before 1.0) |
 | `docs:`, `chore:`, `ci:`, `test:` | No release on their own |
 
-The first release is pinned to `0.1.0-beta.1` with `release-as` in `release-please-config.json`, and marked as a pre-release. Remove `release-as` once it is out, or change it for the next beta. Pre-releases tag images `beta`; only final releases move `latest`.
+Releases are betas for now: `release-please-config.json` uses pre-release versioning, so each release becomes the next `0.1.0-beta.N` and is marked as a pre-release. For the first final release, set `"release-as": "0.1.0"` and remove `prerelease` and `versioning`. Pre-releases tag images `beta`; only final releases move `latest`.
 
 ## Local checks
 
