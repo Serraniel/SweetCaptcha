@@ -138,6 +138,9 @@ type Limits struct {
 	SiteBaselinePerMinute int64 `yaml:"site_baseline_per_minute"`
 	// WaitPerHour limits uses of the wait path per pseudonymised address.
 	WaitPerHour int64 `yaml:"wait_per_hour"`
+	// NetworkMemory remembers hard failures per /24 or /48 network for 30 minutes.
+	// Turn it off where many people share one address, such as large NATs.
+	NetworkMemory *bool `yaml:"network_memory"`
 }
 
 // Site is one integration.
@@ -162,6 +165,11 @@ type Site struct {
 	TestMode string `yaml:"test_mode"`
 	// Rules are operator-defined adjustments. See docs/OPERATIONS.md.
 	Rules []Rule `yaml:"rules"`
+}
+
+// NetworkMemoryOn reports whether hard failures are remembered per network.
+func (s *Site) NetworkMemoryOn() bool {
+	return s.Limits.NetworkMemory == nil || *s.Limits.NetworkMemory
 }
 
 // WaitAllowed reports whether the wait fallback is offered.

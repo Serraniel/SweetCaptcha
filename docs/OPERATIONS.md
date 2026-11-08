@@ -19,6 +19,7 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `pow.wait` | sha256, 18 bits × 48 | About 12.6M hashes. |
 | `pow.wait_min_duration` | `8s` | The wait path can't finish sooner, whatever the device. This costs every client the same wall time instead of punishing slow phones. |
 | `pow.growth` | `1` | How fast difficulty rises under load: 0.5 slow, 1 medium, 1.5 fast, 0 off. |
+| `limits.network_memory` | `true` | Remembers hard failures per /24 or /48 network for 30 minutes, as a small extra risk. Turn it off where many people share one address. |
 | `limits.site_baseline_per_minute` | `0` (off) | Your site's normal challenges per minute. Above it, difficulty rises for everyone. |
 | `policy.shadow` | `false` | Records decisions without enforcing them. |
 | `policy.on_definitive` | `deny` | Or `puzzle`. |

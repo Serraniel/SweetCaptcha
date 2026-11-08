@@ -294,6 +294,13 @@ async function run() {
       return r.via === 'checkbox' ? { ...r, result: 'checkbox-pass' } : r;
     }));
 
+  await scenario('Network memory: a clean visitor after three forged requests from the same network', 'Mechanics', 'remembered', async () => {
+    for (let i = 0; i < 3; i++) await httpBot(ua, null, BASE, 'lab_netmem');
+    const r = await httpBot(ua, forgedSignals(ua, major), BASE, 'lab_netmem');
+    const hit = (r.reasons ?? []).includes('net_recent_failures');
+    return { ...r, result: hit && r.result !== 'deny' ? 'remembered' : `missed-${r.result}` };
+  });
+
   // Mechanics.
   await scenario('Strict mode: no device reads, storage, or third parties', 'Privacy', 'clean', () => audit('lab_strict'));
   await scenario('Audit control: the same audit does find reads on a standard site', 'Privacy', 'violation', async () => {

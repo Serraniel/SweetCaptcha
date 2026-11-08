@@ -155,6 +155,7 @@ func (s *Server) handleTransparency(w http.ResponseWriter, r *http.Request) {
 			"challenge_state":    "until expiry, at most 11 minutes",
 			"token_redemption":   "until token expiry plus 1 minute",
 			"wait_path_counter":  "1 hour, keyed by a daily-rotating pseudonym of the address",
+			"network_failures":   "30 minutes, standard mode only, keyed by a daily-rotating pseudonym of the /24 or /48 network",
 			"rate_counter":       "2 minutes, keyed by a daily-rotating pseudonym of the address",
 			"aggregate_counters": "35 days, counts only",
 			"ip_address_stored":  "never",
