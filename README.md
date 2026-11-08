@@ -31,6 +31,15 @@ For the strict-only build, which contains no detection code:
 docker compose -f compose.strict.yaml up -d --build
 ```
 
+Prebuilt images for amd64 and arm64 are on GitHub's registry. `latest` is the newest release, and each release also has its version tag:
+
+```sh
+docker pull ghcr.io/serraniel/sweetcaptcha:latest          # standard
+docker pull ghcr.io/serraniel/sweetcaptcha:latest-strict   # strict only, no detection code
+```
+
+To use them with Compose, replace `build:` with `image:` in `compose.yaml`.
+
 Then see [Operations](docs/OPERATIONS.md) before using it in production. In particular, TLS setup decides how much of the network evidence is available.
 
 ## Integrating
