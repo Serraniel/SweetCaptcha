@@ -148,24 +148,29 @@ function stopWorkers(): void {
   workers = [];
 }
 
-function solve(p: PowParams, onProgress?: (v: number) => void): Promise<number[]> {
+function solve(p: PowParams, onProgress?: (v: number) => void, count = WORKERS): Promise<number[]> {
   stopWorkers();
   const nonces: number[] = new Array(p.count);
   let solved = 0;
   return new Promise((res, rej) => {
-    for (let k = 0; k < Math.min(WORKERS, p.count); k++) {
+    const fail = () => {
+      stopWorkers();
+      // Memory-hard work can exhaust memory with several workers on small devices.
+      // Retry once with a single worker; the algorithm and difficulty stay the same.
+      if (count > 1) solve(p, onProgress, 1).then(res, rej);
+      else rej(new Error('worker-failed'));
+    };
+    for (let k = 0; k < Math.min(count, p.count); k++) {
       const indices: number[] = [];
-      for (let i = k; i < p.count; i += WORKERS) indices.push(i);
+      for (let i = k; i < p.count; i += count) indices.push(i);
       const w = new Worker(workerUrl);
       workers.push(w);
-      w.onerror = () => {
-        stopWorkers();
-        rej(new Error('worker-failed'));
-      };
-      w.onmessage = (ev: MessageEvent<{ index?: number; nonce?: number; done?: boolean }>) => {
+      w.onerror = fail;
+      w.onmessage = (ev: MessageEvent<{ index?: number; nonce?: number; done?: boolean; error?: string }>) => {
+        if (ev.data.error) return fail();
         if (ev.data.index === undefined || ev.data.nonce === undefined) return;
+        if (nonces[ev.data.index] === undefined) solved++;
         nonces[ev.data.index] = ev.data.nonce;
-        solved++;
         onProgress?.(solved / p.count);
         if (solved === p.count) {
           stopWorkers();

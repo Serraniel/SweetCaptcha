@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "lab": "node run.mjs",
-    "adversarial": "node adversarial.mjs"
+    "adversarial": "node adversarial.mjs",
+    "bench": "node bench.mjs"
   },
   "dependencies": {
     "patchright": "1.64.3",

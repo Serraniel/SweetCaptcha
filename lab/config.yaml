@@ -52,3 +52,33 @@ sites:
     mode: standard
     hostnames: [localhost]
     limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+  # Benchmark sites: strict mode submits as soon as the work is done, so the time
+  # between challenge and submit is the solve time.
+  - name: lab-bench-base
+    sitekey: lab_bench_base
+    secret: lab-bench-base-secret
+    mode: strict
+    hostnames: [localhost]
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    pow: {base: {algo: sha256, bits: 14, count: 48}}
+  - name: lab-bench-checkbox
+    sitekey: lab_bench_checkbox
+    secret: lab-bench-checkbox-secret
+    mode: strict
+    hostnames: [localhost]
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    pow: {base: {algo: sha256, bits: 16, count: 48}}
+  - name: lab-bench-wait
+    sitekey: lab_bench_wait
+    secret: lab-bench-wait-secret
+    mode: strict
+    hostnames: [localhost]
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    pow: {base: {algo: sha256, bits: 18, count: 48}}
+  - name: lab-bench-scrypt
+    sitekey: lab_bench_scrypt
+    secret: lab-bench-scrypt-secret
+    mode: strict
+    hostnames: [localhost]
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    pow: {base: {algo: scrypt, bits: 4, count: 16}}
