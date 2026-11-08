@@ -114,10 +114,20 @@ func (s *Server) verify(ctx context.Context, p verifyParams) verifyOutcome {
 		return verifyOutcome{err: errInvalidResponse}
 	}
 	// With bind_client, a token only redeems for the network that earned it. The
-	// check needs remoteip; without it, sites get the unbound behaviour.
+	// check needs remoteip; without it, sites get the unbound behaviour. Dual-stack
+	// visitors often solve over one IP family and reach the site over the other.
+	// Those networks cannot be compared, so the check is skipped rather than
+	// failing a real person, and the skip is counted.
 	if site.Policy.BindClient && t.Net != "" && p.RemoteIP != "" {
 		addr, err := netip.ParseAddr(strings.TrimSpace(p.RemoteIP))
-		if err != nil || s.networkPseudonym(addr.Unmap()) != t.Net {
+		if err != nil {
+			return verifyOutcome{err: errInvalidResponse}
+		}
+		got := s.networkPseudonym(addr.Unmap())
+		switch {
+		case got[:2] != t.Net[:2]:
+			s.stats.Add(ctx, site.Name, stats.BindSkippedFamily)
+		case got != t.Net:
 			return verifyOutcome{err: errInvalidResponse}
 		}
 	}

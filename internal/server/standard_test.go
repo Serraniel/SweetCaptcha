@@ -484,4 +484,9 @@ func TestBindClientRejectsOtherNetworks(t *testing.T) {
 	if got := verify(tokenFor(), ""); got != true {
 		t.Errorf("without remoteip the token should verify: %v", got)
 	}
+	// Solved over IPv4, reported over IPv6: the networks can't be compared, so a
+	// dual-stack visitor must not be locked out.
+	if got := verify(tokenFor(), "2001:db8::1"); got != true {
+		t.Errorf("IP family switch rejected: %v", got)
+	}
 }

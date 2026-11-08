@@ -208,6 +208,10 @@ let checkboxPrompt: (() => void) | null = null;
 let openPuzzle: { reply: SubmitReply; expires: number } | null = null;
 let lastAction = '';
 let lastCData = '';
+// A "retry" reply means the challenge expired or was lost. One silent retry hides
+// that from the visitor; after it, an error with a retry button appears instead of
+// looping.
+let silentRetries = 0;
 
 function waitForFinish(): Promise<HostMessage> {
   if (earlyFinish) {
@@ -280,6 +284,7 @@ async function run(action: string, cdata: string): Promise<void> {
 }
 
 function pass(token: string, ttl: number): void {
+  silentRetries = 0;
   checkboxPrompt = null;
   openPuzzle = null;
   send('overlay', { on: false });
@@ -327,7 +332,8 @@ async function handle(r: SubmitReply, action: string, cdata: string, mine: numbe
       send('error', { code: 'denied' });
       return;
     default:
-      return void run(action, cdata);
+      if (silentRetries++ < 1) return void run(action, cdata);
+      return showError('verification-failed');
   }
 }
 
@@ -694,6 +700,7 @@ window.addEventListener('message', (ev: MessageEvent<HostMessage>) => {
   if (ev.source !== parent || ev.origin !== parentOrigin || ev.data?.sc !== 1) return;
   switch (ev.data.type) {
     case 'start':
+      silentRetries = 0;
       lastAction = ev.data.action ?? '';
       lastCData = ev.data.cdata ?? '';
       void run(lastAction, lastCData);
