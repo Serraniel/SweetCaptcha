@@ -36,7 +36,8 @@ async function playwrightFlow(engine, style, opts = {}) {
 async function puppeteerFlow(style) {
   const puppeteer = addExtra(puppeteerCore);
   puppeteer.use(Stealth());
-  const browser = await puppeteer.launch({ headless: true, executablePath });
+  // Same sandbox setting Playwright uses by default, so every tool runs alike.
+  const browser = await puppeteer.launch({ headless: true, executablePath, args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage();
     await page.goto(`${BASE}/demo/?k=${KEY}`);
