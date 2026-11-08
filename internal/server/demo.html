@@ -1,20 +1,22 @@
 <!doctype html>
-<html lang="en"{{THEME_ATTR}}>
+<html lang="en"{{if ne .Theme "auto"}} data-theme="{{.Theme}}"{{end}}>
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SweetCaptcha demo</title>
-<style>{{CSS}}</style>
-<script src="{{SCRIPT}}" async defer></script>
+<style>{{.CSS}}</style>
+<script src="{{.Script}}" async defer></script>
 </head>
 <body><main>
-<h1>SweetCaptcha demo <small>{{VERSION}}</small></h1>
-<p class="themes">Theme:{{THEMES}}</p>
-<p>Site <strong>{{SITE}}</strong> ({{MODE}} mode), integrated through the <strong>{{API}}</strong>.</p>
+<h1>SweetCaptcha demo <small>{{.Version}}</small></h1>
+<p class="themes">Theme:{{range .Themes}}<a href="{{.URL}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</p>
+<p>Site <strong>{{.Site}}</strong> ({{.Mode}} mode), integrated through the <strong>{{.API}}</strong>.</p>
 <form id="form" method="post" action="/demo/verify">
-<input type="hidden" name="k" value="{{KEY}}"><input type="hidden" name="provider" value="{{PROVIDER}}"><input type="hidden" name="theme" value="{{THEME}}">
+<input type="hidden" name="k" value="{{.Key}}"><input type="hidden" name="provider" value="{{.Provider}}"><input type="hidden" name="theme" value="{{.Theme}}">
 <label>Your name<input id="name" type="text" name="name" autocomplete="off"></label>
-<div id="widget" class="{{CLASS}}" data-sitekey="{{KEY}}" data-theme="{{THEME}}"></div>
+<div id="widget" class="{{.Class}}" data-sitekey="{{.Key}}" data-theme="{{.Theme}}"></div>
 <button id="send">Send</button>
 </form>
-<nav><p>The widget is always SweetCaptcha. A site's mode decides what it checks. The API choice only shows how a site already using that provider's code would connect.</p>{{LINKS}}</nav>
+<nav><p>The widget is always SweetCaptcha. A site's mode decides what it checks. The API choice only shows how a site already using that provider's code would connect.</p>
+{{range .Sites}}<p><strong>{{.Name}}</strong> ({{.Mode}} mode): {{range .Links}}<a href="{{.URL}}">{{.Name}}</a> {{end}}</p>
+{{end}}</nav>
 </main></body></html>
