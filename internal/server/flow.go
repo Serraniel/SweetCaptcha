@@ -142,12 +142,11 @@ func (s *Server) handleChallenge(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "rate-limited"})
 		return
 	}
+	// Difficulty adapts to load in both modes. It uses only the transient
+	// per-address counter and an aggregate per-site counter.
 	level := site.PoW.Base
-	if velocity > site.Limits.SoftPerMinute {
-		// Rate-based difficulty is available in both modes. It uses only the
-		// transient per-address counter.
-		level.Bits = min(level.Bits+2, pow.MaxBits)
-	}
+	boost := pow.Boost(velocity-site.Limits.SoftPerMinute, s.siteRate(ctx, site), site.Limits.SiteBaselinePerMinute, site.PoW.GrowthFactor())
+	level.Bits, level.Count = pow.Scale(level.Bits, level.Count, boost)
 	c := &claims{
 		SiteKey: site.SiteKey, Host: req.Hostname, Action: req.Action, CData: req.CData,
 		Stage: stageBase, Velocity: velocity,
@@ -165,6 +164,20 @@ func (s *Server) handleChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	s.stats.Add(ctx, site.Name, stats.Issued)
 	writeJSON(w, http.StatusOK, challengeResponse{Challenge: sealed, Pow: view, Mode: site.Mode, Collect: collect})
+}
+
+// siteRate counts this site's challenges in the current minute. It is only kept
+// when a baseline is configured.
+func (s *Server) siteRate(ctx context.Context, site *config.Site) int64 {
+	if site.Limits.SiteBaselinePerMinute <= 0 {
+		return 0
+	}
+	n, err := s.store.Incr(ctx, "sr:"+site.SiteKey+":"+s.now().UTC().Format("200601021504"), 1, 2*time.Minute)
+	if err != nil {
+		slog.Warn("site rate counter unavailable", "error", err)
+		return 0
+	}
+	return n
 }
 
 func (s *Server) sealChallenge(c *claims, level config.PoWLevel, ttl time.Duration) (string, *powView, error) {
@@ -226,6 +239,7 @@ type submitResponse struct {
 	Challenge  string          `json:"c,omitempty"`
 	Pow        *powView        `json:"pow,omitempty"`
 	Puzzle     json.RawMessage `json:"puzzle,omitempty"`
+	RetryMS    int64           `json:"retry,omitempty"`
 	PuzzleRef  string          `json:"p,omitempty"`
 	WaitOption bool            `json:"wait,omitempty"`
 	SupportURL string          `json:"support,omitempty"`
@@ -247,6 +261,14 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
+	// The wait path has a minimum duration. Until it passes, the challenge stays
+	// unconsumed and the client is told when to repeat the request.
+	if c.Stage == stageWait {
+		if remaining := time.UnixMilli(c.Issued).Add(site.PoW.WaitMinDuration).Sub(s.now()); remaining > 0 {
+			writeJSON(w, http.StatusOK, submitResponse{Status: "hold", RetryMS: remaining.Milliseconds() + 50})
+			return
+		}
+	}
 	// Verify the work before consuming, so that a wrong guess costs the attacker
 	// the attempt without letting a stranger burn someone else's challenge.
 	if !c.Pow.Verify(req.Nonces) {

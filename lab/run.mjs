@@ -449,6 +449,21 @@ async function run() {
     return { result: r.result, reasons: [] };
   });
   await scenario('Strict mode: all four provider form flows', 'Compatibility', 'pass', providerForms);
+  await scenario('Base proof of work: time to token in strict mode, this machine', 'Mechanics', 'fast', () => withBrowser({}, async (b) => {
+    const times = [];
+    for (let i = 0; i < 5; i++) {
+      const page = await b.newPage();
+      const started = Date.now();
+      await page.goto(`${BASE}/demo/?k=lab_strict`);
+      await page.waitForFunction(() => document.querySelector('input[name="sc-response"]')?.value, null, { timeout: 15000 });
+      times.push(Date.now() - started);
+      await page.close();
+    }
+    times.sort((a, b) => a - b);
+    const median = times[2];
+    // Target: about 0.2 s of work on a desktop, plus page and frame load.
+    return { result: median < 1500 ? 'fast' : 'slow', reasons: [`median ${median} ms`, `max ${times[4]} ms`] };
+  }));
   await scenario('reCAPTCHA v3, Turnstile and hCaptcha JavaScript APIs', 'Compatibility', 'pass', programmaticApis);
   await scenario('Checkbox step, with scrypt proof of work in the browser', 'Mechanics', 'pass', () => withBrowser(
     { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {

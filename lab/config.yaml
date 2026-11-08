@@ -42,5 +42,5 @@ sites:
     mode: standard
     hostnames: [localhost]
     policy: {step_up_above: 0.001, puzzle_above: 0.002, deny_above: 0.9999}
-    pow: {wait: {algo: sha256, bits: 14, count: 8}}
+    pow: {wait: {algo: sha256, bits: 14, count: 8}, wait_min_duration: 3s}
     limits: {soft_per_minute: 100000, hard_per_minute: 1000000}

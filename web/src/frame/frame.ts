@@ -109,7 +109,8 @@ interface PuzzlePublic {
 }
 
 interface SubmitReply {
-  status: 'pass' | 'interact' | 'stepup' | 'puzzle' | 'deny' | 'retry';
+  status: 'pass' | 'interact' | 'stepup' | 'hold' | 'puzzle' | 'deny' | 'retry';
+  retry?: number;
   token?: string;
   ttl?: number;
   c?: string;
@@ -132,23 +133,57 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 let generation = 0;
-let worker: Worker | null = null;
+
+// Proof of work runs in a fixed number of workers. A fixed count avoids reading
+// the device's core count, which strict mode must not do. Devices with fewer
+// cores simply share them.
+const WORKERS = 4;
+let workers: Worker[] = [];
+
+function stopWorkers(): void {
+  for (const w of workers) w.terminate();
+  workers = [];
+}
 
 function solve(p: PowParams, onProgress?: (v: number) => void): Promise<number[]> {
-  worker?.terminate();
-  const w = new Worker(workerUrl);
-  worker = w;
+  stopWorkers();
+  const nonces: number[] = new Array(p.count);
+  let solved = 0;
   return new Promise((res, rej) => {
-    w.onerror = () => rej(new Error('worker-failed'));
-    w.onmessage = (ev: MessageEvent<{ progress?: number; nonces?: number[] }>) => {
-      if (ev.data.progress !== undefined) onProgress?.(ev.data.progress);
-      if (ev.data.nonces) {
-        w.terminate();
-        res(ev.data.nonces);
-      }
-    };
-    w.postMessage(p);
+    for (let k = 0; k < Math.min(WORKERS, p.count); k++) {
+      const indices: number[] = [];
+      for (let i = k; i < p.count; i += WORKERS) indices.push(i);
+      const w = new Worker(workerUrl);
+      workers.push(w);
+      w.onerror = () => {
+        stopWorkers();
+        rej(new Error('worker-failed'));
+      };
+      w.onmessage = (ev: MessageEvent<{ index?: number; nonce?: number; done?: boolean }>) => {
+        if (ev.data.index === undefined || ev.data.nonce === undefined) return;
+        nonces[ev.data.index] = ev.data.nonce;
+        solved++;
+        onProgress?.(solved / p.count);
+        if (solved === p.count) {
+          stopWorkers();
+          res(nonces);
+        }
+      };
+      w.postMessage({ params: p, indices });
+    }
   });
+}
+
+// Posts solved work. The wait path has a minimum duration enforced by the server,
+// which answers "hold" until it has passed; the request is then repeated.
+async function submitWork(body: Record<string, unknown>, onHold?: (ms: number) => void): Promise<SubmitReply> {
+  for (;;) {
+    const r = await post<SubmitReply>('/v1/submit', body);
+    if (r.status !== 'hold') return r;
+    const ms = Math.max(200, Math.min(r.retry ?? 1000, 60000));
+    onHold?.(ms);
+    await new Promise((res) => setTimeout(res, ms));
+  }
 }
 
 function loadScript(src: string, integrity: string): Promise<void> {
@@ -265,14 +300,17 @@ async function handle(r: SubmitReply, action: string, cdata: string, mine: numbe
     case 'interact':
       return showCheckbox(r, action, cdata, mine);
     case 'stepup': {
+      // The calculation fills most of the bar; any server-enforced remainder fills
+      // the rest, so the bar never sits full while the visitor still waits.
+      const progress = progressView();
       let nonces: number[];
       try {
-        nonces = await solve(r.pow!, progressView());
+        nonces = await solve(r.pow!, (v) => progress(v * 0.8));
       } catch {
         return showError('worker-failed');
       }
       if (stale()) return;
-      const next = await post<SubmitReply>('/v1/submit', { c: r.c, nonces });
+      const next = await submitWork({ c: r.c, nonces }, (ms) => progress(1, ms));
       if (!stale()) await handle(next, action, cdata, mine, user);
       return;
     }
@@ -341,14 +379,16 @@ function showCheckbox(r: SubmitReply, action: string, cdata: string, mine: numbe
 // A step-up shows its bar in the badge. The wait path shows one in the open dialog.
 let barTarget: HTMLElement | null = null;
 
-function progressView(): (v: number) => void {
-  if (barTarget) {
-    const b = barTarget;
-    return (v) => {
-      b.style.width = `${Math.round(v * 100)}%`;
-    };
+function progressView(): (v: number, overMs?: number) => void {
+  const b = barTarget;
+  if (!b) {
+    const set = busyWithProgress(t.working);
+    return (v) => set(v);
   }
-  return busyWithProgress(t.working);
+  return (v, overMs) => {
+    b.style.transition = overMs ? `width ${overMs}ms linear` : '';
+    b.style.width = `${Math.round(v * 100)}%`;
+  };
 }
 
 // Builds the dialog used for tasks. A native dialog closes with Escape and keeps
@@ -484,7 +524,7 @@ function showWait(action: string, cdata: string, mine: number): void {
   // checkbox, which runs a fresh verification.
   const box = modalShell(() => {
     generation++;
-    worker?.terminate();
+    stopWorkers();
     dismiss(action, cdata, mine + 1);
   });
   const status = el('p', '', t.waiting);
@@ -611,7 +651,7 @@ window.addEventListener('message', (ev: MessageEvent<HostMessage>) => {
       break;
     case 'reset':
       generation++;
-      worker?.terminate();
+      stopWorkers();
       break;
   }
 });
