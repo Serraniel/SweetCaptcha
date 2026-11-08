@@ -562,3 +562,38 @@ func TestFrameCarriesLegalLinksAndNoindex(t *testing.T) {
 		t.Errorf("privacy link missing or unescaped: %s", raw)
 	}
 }
+
+func TestMetricsMirrorEvents(t *testing.T) {
+	cfg := testConfig(t, strictSite)
+	cfg.Server.MetricsListen = "127.0.0.1:0"
+	s, err := New(cfg, testStore(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	token := strictToken(t, ts, "")
+	verifyForm(t, ts.URL+"/turnstile/v0/siteverify", url.Values{"secret": {strictPass}, "response": {token}})
+	var b strings.Builder
+	if _, err := s.metrics.WriteTo(&b); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`sweetcaptcha_events_total{site="strict",event="pass"} 1`,
+		`sweetcaptcha_siteverify_total{site="strict",flavor="turnstile",result="success"} 1`,
+		`sweetcaptcha_solve_seconds_count{site="strict",stage="base"} 1`,
+	} {
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("missing %s", want)
+		}
+	}
+	// The public handler must not serve metrics.
+	resp, err := http.Get(ts.URL + "/metrics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		t.Error("metrics exposed on the public listener")
+	}
+}

@@ -46,6 +46,8 @@ var Base = []string{Issued, Passed, PowFailed, Replayed, RateLimit, Verified, Ve
 type Recorder struct {
 	s   store.Store
 	now func() time.Time
+	// Mirror, when set, also receives every event, for the metrics endpoint.
+	Mirror func(site, name string)
 }
 
 // New returns a Recorder.
@@ -55,6 +57,9 @@ func key(site, day, name string) string { return "st:" + site + ":" + day + ":" 
 
 // Add increments a counter for today.
 func (r *Recorder) Add(ctx context.Context, site, name string) {
+	if r.Mirror != nil {
+		r.Mirror(site, name)
+	}
 	if _, err := r.s.Incr(ctx, key(site, r.now().UTC().Format("20060102"), name), 1, retention); err != nil {
 		slog.Warn("stats: increment failed", "error", err)
 	}

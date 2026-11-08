@@ -143,6 +143,13 @@ The `ipdata` service downloads public lists once a day from iptoasn.com, torproj
 
 Logs contain no addresses or signals, and shadow mode logs only rule identifiers.
 
+**Prometheus.** Set `server.metrics_listen` (for example `"127.0.0.1:9090"`) to serve `/metrics` on its own listener. It is off by default and must not be reachable from the internet. It exposes:
+- `sweetcaptcha_events_total{site,event}`: the admin page counters, including rule hits
+- `sweetcaptcha_siteverify_total{site,flavor,result}`: verification calls by API flavour and result
+- `sweetcaptcha_solve_seconds{site,stage}`: a histogram of time from challenge to submission
+
+Labels never include addresses, networks, user agents or tokens. The counts are per process and reset on restart; the admin page keeps the 35-day totals.
+
 Watch for a rising puzzle pass rate or falling solve times in a family, which suggest it has been automated. Re-run the lab when browsers or stealth tools change.
 
 ## Failure behaviour

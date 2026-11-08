@@ -37,11 +37,27 @@ func (s *Server) newHTTPServer(addr string) *http.Server {
 func (s *Server) Run(ctx context.Context) error {
 	go s.std.start(ctx)
 	servers := []*http.Server{s.newHTTPServer(s.cfg.Server.Listen)}
-	errs := make(chan error, 2)
+	errs := make(chan error, 3)
 	go func() {
 		slog.Info("listening", "addr", servers[0].Addr, "tls", false)
 		errs <- servers[0].ListenAndServe()
 	}()
+	if s.metrics != nil {
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+			if _, err := s.metrics.WriteTo(w); err != nil {
+				slog.Debug("write metrics", "error", err)
+			}
+		})
+		ms := s.newHTTPServer(s.cfg.Server.MetricsListen)
+		ms.Handler = mux
+		servers = append(servers, ms)
+		go func() {
+			slog.Info("listening", "addr", ms.Addr, "metrics", true)
+			errs <- ms.ListenAndServe()
+		}()
+	}
 	if t := s.cfg.Server.TLS; t.Listen != "" {
 		ts := s.newHTTPServer(t.Listen)
 		ts.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12, NextProtos: []string{"h2", "http/1.1"}}

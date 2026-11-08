@@ -48,6 +48,8 @@ type Server struct {
 	TLS            TLS      `yaml:"tls"`
 	// JA4Header names a header carrying a JA4 value from a trusted TLS terminator.
 	JA4Header string `yaml:"ja4_header"`
+	// MetricsListen enables a Prometheus endpoint on its own address. Keep it private.
+	MetricsListen string `yaml:"metrics_listen"`
 
 	Proxies []netip.Prefix `yaml:"-"`
 }
