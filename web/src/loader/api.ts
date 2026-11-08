@@ -134,12 +134,16 @@ class Widget {
 
   private makeFrame(): HTMLIFrameElement {
     const f = document.createElement('iframe');
-    const lang = this.opts.hl ?? this.opts.language ?? params.get('hl') ?? document.documentElement.lang ?? '';
+    // An explicit language wins. "auto" (Turnstile's default) means the browser's
+    // preference, which the server reads from the Accept-Language header. The page's
+    // own language is the fallback.
+    const explicit = this.opts.hl ?? this.opts.language ?? params.get('hl') ?? '';
     const q = new URLSearchParams({
       k: this.opts.sitekey,
       h: location.hostname,
       o: location.origin,
-      l: lang,
+      l: explicit === 'auto' ? '' : explicit,
+      p: document.documentElement.lang ?? '',
       t: this.opts.theme ?? 'auto',
       s: this.opts.size ?? 'normal',
     });

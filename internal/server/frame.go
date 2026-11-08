@@ -44,8 +44,14 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Security-Policy", csp)
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	h.Set("Cache-Control", "no-store")
+	lang := pickLanguage(r.URL.Query().Get("l"), r.Header.Get("Accept-Language"), r.URL.Query().Get("p"))
+	dir := "ltr"
+	if rtlLanguages[lang] {
+		dir = "rtl"
+	}
+	h.Set("Vary", "Accept-Language")
 	var b strings.Builder
-	b.WriteString(`<!doctype html><html lang="en" data-worker="/v1/assets/`)
+	b.WriteString(`<!doctype html><html lang="` + lang + `" dir="` + dir + `" data-worker="/v1/assets/`)
 	b.WriteString(html.EscapeString(worker.Path))
 	b.WriteString(`" data-version="`)
 	b.WriteString(html.EscapeString(edition.Version))

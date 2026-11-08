@@ -27,6 +27,8 @@ Each can be tested by you. `npm run lab` tests them in a real browser, and CI ch
 | Solve time is not used | `handleSubmit` in `internal/server/flow.go` |
 | Strict-only image has no collector code | CI checks the image and the Go dependency graph; `sweetcaptcha ipdata` doesn't exist there |
 
+The widget's language is chosen on the server from the `Accept-Language` header, which every browser sends anyway. Script never reads it.
+
 HTTP itself still carries an address and headers to your server, and your own reverse proxy may log them. `/v1/transparency?sitekey=…` states the running configuration in machine-readable form.
 
 The strict mode argument, that a proof-of-work solution isn't "information stored in or accessed from" the device under Art. 5(3), is our own reasoning and is untested.
