@@ -4,6 +4,16 @@ A self-hosted CAPTCHA that verifies most visitors without a task. It runs as a D
 
 ![The widget verifying a visitor without a task, in light and dark themes](docs/media/demo.gif)
 
+> [!WARNING]
+> **Beta.** SweetCaptcha is young and has not been tested with real visitors yet. Use it on forms where a wrong decision is cheap, run it in [shadow mode](docs/OPERATIONS.md#roll-out-in-shadow-mode) first, and read [what it does not do](#what-it-does-not-do). Not yet verified:
+> - **Real people:** no testing with screen readers, keyboard-only use or phones. False-positive rates are unknown.
+> - **Phones:** proof-of-work times on phones are estimates.
+> - **Translations:** 19 of 21 languages are machine-assisted and need native review.
+> - **Browsers:** Tor Browser, Brave, Safari and Firefox with fingerprinting resistance are untested ([matrix](lab/README.md#compatibility-matrix)).
+> - **Legal:** the privacy guidance has had no legal review.
+>
+> Test reports, translation fixes and bypasses are welcome as issues. Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md).
+
 It combines server-side checks on device and network consistency, interaction analysis, proof of work and single-use tokens. Questionable clients get more work or an interactive task. An opt-in strict mode, also available as a separate image, removes all device and interaction signals and uses proof of work only.
 
 ## Quick start
