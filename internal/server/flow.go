@@ -305,6 +305,9 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, submitResponse{Status: "retry"})
 		return
 	}
+	if s.metrics != nil {
+		s.metrics.Solve(site.Name, c.Stage, float64(s.now().UnixMilli()-c.Issued)/1000)
+	}
 	fresh, err := s.store.SetNX(ctx, "used:"+c.ID, "1", time.Until(time.Unix(c.Expires, 0))+time.Minute)
 	if err != nil {
 		slog.Error("consume challenge", "error", err)

@@ -18,6 +18,7 @@ import (
 	"github.com/Serraniel/SweetCaptcha/internal/assets"
 	"github.com/Serraniel/SweetCaptcha/internal/config"
 	"github.com/Serraniel/SweetCaptcha/internal/keys"
+	"github.com/Serraniel/SweetCaptcha/internal/metrics"
 	"github.com/Serraniel/SweetCaptcha/internal/seal"
 	"github.com/Serraniel/SweetCaptcha/internal/stats"
 	"github.com/Serraniel/SweetCaptcha/internal/store"
@@ -41,6 +42,7 @@ type Server struct {
 	signals  assets.Manifest
 	sigFS    fs.FS
 	std      *standard
+	metrics  *metrics.Registry
 	now      func() time.Time
 	handler  http.Handler
 	frameCSP map[string]string
@@ -70,6 +72,10 @@ func New(cfg *config.Config, st store.Store) (*Server, error) {
 		s.sites[site.SiteKey] = site
 		s.secrets[site.Secret] = site
 		s.frameCSP[site.SiteKey] = frameCSP(site)
+	}
+	if cfg.Server.MetricsListen != "" {
+		s.metrics = metrics.New()
+		s.stats.Mirror = s.metrics.Event
 	}
 	s.core, s.coreFS = assets.Core()
 	s.signals, s.sigFS = assets.Signals()

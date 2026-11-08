@@ -41,6 +41,8 @@ const (
 
 const maxTokenLen = 2048
 
+var flavorNames = map[flavor]string{flavorNative: "native", flavorRecaptcha: "recaptcha", flavorHCaptcha: "hcaptcha", flavorTurnstile: "turnstile"}
+
 type verifyParams struct {
 	Secret      string `json:"secret"`
 	Response    string `json:"response"`
@@ -189,6 +191,13 @@ func (s *Server) siteverify(f flavor) http.HandlerFunc {
 				s.stats.Add(ctx, site.Name, stats.Verified)
 			} else {
 				s.stats.Add(ctx, site.Name, stats.VerifyFail)
+			}
+			if s.metrics != nil {
+				result := "success"
+				if out.err != "" {
+					result = string(out.err)
+				}
+				s.metrics.Verification(site.Name, flavorNames[f], result)
 			}
 		}
 		body := format(f, out)
