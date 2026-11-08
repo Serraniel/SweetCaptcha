@@ -41,6 +41,31 @@ func goodSignals(nonce string) map[string]any {
 	}
 }
 
+// softSite challenges every visitor, so tests can reach a puzzle with a coherent
+// browser and no hard evidence.
+const softSite = `
+  - name: std
+    sitekey: sitekey_std
+    secret: secret_std_secret_std
+    mode: standard
+    hostnames: [example.com]
+    policy: {step_up_above: 0.001, puzzle_above: 0.002}
+    limits: {wait_per_hour: 2}
+    pow:
+      base: {algo: sha256, bits: 4, count: 2}
+      wait: {algo: sha256, bits: 5, count: 2}
+`
+
+func softPuzzle(t *testing.T, ts *httptest.Server) map[string]any {
+	t.Helper()
+	ch, nonce := stdChallenge(t, ts)
+	r := submit(t, ts, ch, goodSignals(nonce), browserHeaders...)
+	if r["status"] != "puzzle" {
+		t.Fatalf("expected a puzzle: %v", r)
+	}
+	return r
+}
+
 func stdChallenge(t *testing.T, ts *httptest.Server) (map[string]any, string) {
 	t.Helper()
 	_, ch := postJSON(t, ts.URL+"/v1/challenge", map[string]string{"sitekey": "sitekey_std", "hostname": "example.com"}, browserHeaders...)
@@ -106,23 +131,71 @@ func TestToolUserAgentIsDenied(t *testing.T) {
 	}
 }
 
-func TestSoftEvidenceStepsUp(t *testing.T) {
+func submitClick(t *testing.T, ts *httptest.Server, r map[string]any, click any) map[string]any {
+	t.Helper()
+	body := map[string]any{"c": r["c"], "nonces": solvePow(t, r["pow"].(map[string]any))}
+	if click != nil {
+		body["click"] = click
+	}
+	_, out := postJSON(t, ts.URL+"/v1/submit", body, browserHeaders...)
+	return out
+}
+
+func TestSoftEvidenceAsksForCheckbox(t *testing.T) {
 	_, ts := newTest(t, stdSite)
 	ch, nonce := stdChallenge(t, ts)
 	sig := goodSignals(nonce)
-	// Teleporting clicks alone reach the step-up band but not a puzzle or a deny.
+	// Teleporting clicks alone reach the checkbox band but not a puzzle or a deny.
 	sig["beh"] = map[string]any{"mode": "mouse", "clicks": 2, "noApproach": 2, "moves": 1}
 	r := submit(t, ts, ch, sig, browserHeaders...)
-	if r["status"] != "stepup" {
+	if r["status"] != "interact" {
 		t.Fatalf("%v", r)
 	}
-	r = submit(t, ts, r, nil, browserHeaders...)
+	r = submitClick(t, ts, r, map[string]any{"pointer": "mouse", "approach": true, "trusted": true, "shownMs": 900})
 	if r["status"] != "pass" {
-		t.Fatalf("after step-up: %v", r)
+		t.Fatalf("after a normal click: %v", r)
 	}
 	m := verifyForm(t, ts.URL+"/v1/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
-	if m["via"] != "stepup" {
+	if m["via"] != "checkbox" {
 		t.Errorf("%v", m)
+	}
+}
+
+func TestNoInteractionAsksForCheckbox(t *testing.T) {
+	_, ts := newTest(t, stdSite)
+	ch, nonce := stdChallenge(t, ts)
+	sig := goodSignals(nonce)
+	sig["beh"] = map[string]any{"mode": "none"}
+	if r := submit(t, ts, ch, sig, browserHeaders...); r["status"] != "interact" {
+		t.Fatalf("%v", r)
+	}
+}
+
+func TestBadCheckboxClicksEscalate(t *testing.T) {
+	for name, click := range map[string]any{
+		"script click":  map[string]any{"pointer": "mouse", "approach": true, "trusted": false, "shownMs": 900},
+		"no click data": nil,
+		"teleport":      map[string]any{"pointer": "mouse", "approach": false, "trusted": true, "shownMs": 900},
+	} {
+		_, ts := newTest(t, stdSite)
+		ch, nonce := stdChallenge(t, ts)
+		sig := goodSignals(nonce)
+		sig["beh"] = map[string]any{"mode": "mouse", "clicks": 2, "noApproach": 2, "moves": 1}
+		r := submit(t, ts, ch, sig, browserHeaders...)
+		if r = submitClick(t, ts, r, click); r["status"] != "puzzle" {
+			t.Errorf("%s: %v", name, r)
+		}
+	}
+}
+
+func TestKeyboardCheckboxIsFine(t *testing.T) {
+	_, ts := newTest(t, stdSite)
+	ch, nonce := stdChallenge(t, ts)
+	sig := goodSignals(nonce)
+	sig["beh"] = map[string]any{"mode": "none"}
+	r := submit(t, ts, ch, sig, browserHeaders...)
+	if r = submitClick(t, ts, r, map[string]any{"pointer": "keyboard", "approach": false, "trusted": true, "shownMs": 1500}); r["status"] != "pass" {
+		t.Fatalf("%v", r)
 	}
 }
 
@@ -150,7 +223,7 @@ func TestPuzzleFlow(t *testing.T) {
 	s, ts := newTest(t, stdSite)
 	ch, _ := stdChallenge(t, ts)
 	r := submit(t, ts, ch, nil, browserHeaders...)
-	if r["status"] != "puzzle" || r["wait"] != true {
+	if r["status"] != "puzzle" {
 		t.Fatalf("%v", r)
 	}
 	raw, _ := json.Marshal(r["puzzle"])
@@ -185,9 +258,8 @@ func TestPuzzleFlow(t *testing.T) {
 }
 
 func TestRepeatedPuzzleFailureFallsBackToWait(t *testing.T) {
-	s, ts := newTest(t, stdSite)
-	ch, _ := stdChallenge(t, ts)
-	r := submit(t, ts, ch, nil, browserHeaders...)
+	s, ts := newTest(t, softSite)
+	r := softPuzzle(t, ts)
 	for range maxAttempts {
 		ref := r["p"].(string)
 		_, r = postJSON(t, ts.URL+"/v1/answer", map[string]any{"p": ref, "values": wrongAnswer(puzzleFor(t, s, ref))})
@@ -200,15 +272,17 @@ func TestRepeatedPuzzleFailureFallsBackToWait(t *testing.T) {
 		t.Fatalf("%v", r)
 	}
 	m := verifyForm(t, ts.URL+"/v1/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
-	if m["via"] != "wait" || m["score"].(float64) >= 0.5 {
-		t.Errorf("a wait token must report low confidence: %v", m)
+	if m["via"] != "wait" {
+		t.Errorf("%v", m)
 	}
 }
 
 func TestWaitPathConsumesPuzzle(t *testing.T) {
-	s, ts := newTest(t, stdSite)
-	ch, _ := stdChallenge(t, ts)
-	r := submit(t, ts, ch, nil, browserHeaders...)
+	s, ts := newTest(t, softSite)
+	r := softPuzzle(t, ts)
+	if r["wait"] != true {
+		t.Fatalf("a coherent browser should be offered the wait path: %v", r)
+	}
 	ref := r["p"].(string)
 	right := puzzleFor(t, s, ref)
 	_, w := postJSON(t, ts.URL+"/v1/wait", map[string]any{"p": ref})
@@ -217,6 +291,38 @@ func TestWaitPathConsumesPuzzle(t *testing.T) {
 	}
 	if _, a := postJSON(t, ts.URL+"/v1/answer", map[string]any{"p": ref, "values": right}); a["status"] != "retry" {
 		t.Errorf("puzzle usable after trading it in: %v", a)
+	}
+}
+
+// Clients with contradictions must solve the task. CPU time must not buy a way past it.
+func TestHardEvidenceCannotUseWait(t *testing.T) {
+	s, ts := newTest(t, stdSite)
+	ch, _ := stdChallenge(t, ts)
+	r := submit(t, ts, ch, nil, browserHeaders...)
+	if r["status"] != "puzzle" || r["wait"] == true {
+		t.Fatalf("%v", r)
+	}
+	ref := r["p"].(string)
+	if _, w := postJSON(t, ts.URL+"/v1/wait", map[string]any{"p": ref}); w["status"] != "deny" {
+		t.Errorf("forged request reached the wait path: %v", w)
+	}
+	// The same applies after repeated failures: the result is a denial.
+	for range maxAttempts {
+		ref = r["p"].(string)
+		_, r = postJSON(t, ts.URL+"/v1/answer", map[string]any{"p": ref, "values": wrongAnswer(puzzleFor(t, s, ref))})
+	}
+	if r["status"] != "deny" {
+		t.Errorf("expected a denial after repeated failures: %v", r)
+	}
+}
+
+func TestWaitPathHasAQuota(t *testing.T) {
+	_, ts := newTest(t, softSite)
+	for i, want := range []string{"stepup", "stepup", "deny"} {
+		r := softPuzzle(t, ts)
+		if _, w := postJSON(t, ts.URL+"/v1/wait", map[string]any{"p": r["p"]}); w["status"] != want {
+			t.Errorf("use %d: %v", i, w["status"])
+		}
 	}
 }
 
@@ -246,8 +352,8 @@ func TestShadowModeIssuesButRecords(t *testing.T) {
 	if m["via"] != "shadow" || m["score"].(float64) > 0.2 {
 		t.Errorf("%v", m)
 	}
-	sum, err := s.stats.Summarise(t.Context(), "std", []string{"shadow_would_challenge"}, 1, 0.02)
-	if err != nil || sum.Counters["shadow_would_challenge"] != 1 {
+	sum, err := s.stats.Summarise(t.Context(), "std", []string{"would_challenge"}, 1, 0.02)
+	if err != nil || sum.Counters["would_challenge"] != 1 {
 		t.Errorf("%+v, %v", sum, err)
 	}
 }
@@ -265,7 +371,7 @@ func TestReplayedPointerPathIsFlagged(t *testing.T) {
 		t.Fatalf("first use of a path: %v", r)
 	}
 	// The same path on a new challenge is evidence of replay and must escalate.
-	if r := run(); r["status"] != "stepup" {
+	if r := run(); r["status"] != "interact" {
 		t.Fatalf("replayed path: %v", r)
 	}
 }
@@ -294,5 +400,18 @@ func TestStandardTransparencyListsReads(t *testing.T) {
 	reads, rules := s.std.register()
 	if len(reads) == 0 || rules == nil {
 		t.Error("register is empty")
+	}
+}
+
+func TestScoreOnlyNeverAsksForInteraction(t *testing.T) {
+	_, ts := newTest(t, strings.ReplaceAll(stdSite, "wait_fallback: true", "policy: {score_only: true}"))
+	ch, _ := stdChallenge(t, ts)
+	r := submit(t, ts, ch, nil, browserHeaders...)
+	if r["status"] != "pass" {
+		t.Fatalf("%v", r)
+	}
+	m := verifyForm(t, ts.URL+"/recaptcha/api/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
+	if m["success"] != true || m["score"].(float64) > 0.2 {
+		t.Errorf("score-only token must carry the low score: %v", m)
 	}
 }

@@ -15,22 +15,23 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `mode` | `standard` | Or `strict`. |
 | `token_ttl` | `5m` | 30 s to 30 min. Keep it short, since single-use tokens are what charge per action. |
 | `pow.base` | sha256, 15 bits, 10 puzzles | Raising it hits the slowest phones first. Solve times on phones have not been measured for these defaults. |
-| `pow.step_up` | sha256, 18 bits, 16 puzzles | `scrypt` is available and narrows the GPU advantage. Start with low bits, because each attempt is far slower. |
+| `pow.step_up` | sha256, 18 bits, 16 puzzles | Runs while the checkbox is shown. `scrypt` is available and narrows the GPU advantage. Start with low bits, because each attempt is far slower. |
 | `pow.wait` | sha256, 21 bits, 24 puzzles | An estimated 10 s on a desktop to a few minutes on a slow phone, not measured. |
 | `policy.shadow` | `false` | Records decisions without enforcing them. |
 | `policy.on_definitive` | `deny` | Or `puzzle`. |
-| `limits` | 30 and 300 per minute | Above soft, difficulty rises. Above hard, requests get HTTP 429. |
+| `policy.score_only` | `false` | Never show a checkbox or task, like reCAPTCHA v3: every request gets a token, and the site must reject low scores itself. Use it only where the backend checks `score`, or a bot gets a valid token. |
+| `limits` | 30 and 300 per minute; 5 waits per hour | Above soft, difficulty rises. Above hard, requests get HTTP 429. `wait_per_hour` caps the wait path per address, and shared addresses share the cap. |
 | `puzzles` | all three | Disable a family if its solve rate climbs. |
-| `wait_fallback` | `true` | Keep this on unless another accessible route exists. |
+| `wait_fallback` | `true` | Lets coherent browsers leave a puzzle for a long calculation. Never offered to clients with contradictions or automation markers. If you turn it off, people who can't do visual tasks need another route, such as `support_url`. |
 | `support_url` | none | Shown on a deny and beside puzzles. |
 | `test_mode` | none | `pass` or `fail` for integrator tests. Never use it in production. |
 
 ## Roll out in shadow mode
 
 1. Set `policy.shadow: true`. Every visitor gets a token, and the score and reasons are recorded.
-2. Watch `/admin/` for at least a week. `shadow_would_challenge` shows how many people would have been interrupted, and the `rule_*` counters show why.
+2. Watch `/admin/` for at least a week. `would_challenge` shows how many people would have been interrupted, and the `rule_*` counters show why.
 3. Test by hand with keyboard-only navigation, a screen reader, a VPN, Tor and your own mobile devices.
-4. Set `step_up_above` using the suggestion on the admin page, which needs at least 500 sessions, then turn shadow off.
+4. Set `step_up_above`, the threshold for showing the checkbox, using the suggestion on the admin page, which needs at least 500 sessions, then turn shadow off.
 
 ## TLS decides how much evidence you get
 

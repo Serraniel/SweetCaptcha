@@ -31,9 +31,9 @@ var (
 
 // Stages of a verification.
 const (
-	stageBase   = "base"
-	stageStepUp = "stepup"
-	stageWait   = "wait"
+	stageBase     = "base"
+	stageInteract = "interact"
+	stageWait     = "wait"
 )
 
 // claims is sealed into each challenge.
@@ -214,6 +214,7 @@ type submitRequest struct {
 	Challenge string          `json:"c"`
 	Nonces    []uint32        `json:"nonces"`
 	Signals   json.RawMessage `json:"signals"`
+	Click     json.RawMessage `json:"click"`
 }
 
 // submitResponse tells the widget what to do next. A deny carries no reasons, so
@@ -268,7 +269,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		s.issue(w, r, site, &c, StrictScore, "pow", nil)
 		return
 	}
-	s.std.submit(w, r, s, site, &c, req.Signals)
+	s.std.submit(w, r, s, site, &c, req)
 }
 
 // issue mints a pass token. No evidence survives in it other than coarse reason

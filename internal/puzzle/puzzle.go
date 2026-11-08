@@ -6,8 +6,8 @@
 // Recognition grids are deliberately absent: the research in docs/research shows
 // they are solved cheaply. These tasks are the less-broken interactive kinds,
 // and they are an expiring margin rather than a security boundary, so a site can
-// rotate or disable families. Each has a keyboard path. For anyone who cannot
-// use them, the server also offers a slower compute path with no cognitive task.
+// rotate or disable families. Each has a keyboard path. internal/server decides
+// when a slower compute path may be offered instead.
 package puzzle
 
 import (
@@ -113,41 +113,36 @@ func DecodeAnswer(s string) (Answer, error) {
 var (
 	paper = color.NRGBA{244, 245, 247, 255}
 	ink   = color.NRGBA{58, 66, 82, 255}
+	// lineInk is one colour for every line. See lineTrace.
+	lineInk = color.NRGBA{70, 96, 150, 255}
 )
 
 const (
 	lineCount       = 6
-	rotateTolerance = 12.0
+	layoutAttempts  = 200
+	closeDistance   = 10.0
+	maxCloseRun     = 6
+	minCrossings    = 2
+	rotateTolerance = 20.0
 )
 
-// lineTrace draws tangled curves. Two starts are marked (circle first, then
-// square) and the answer is the number each line ends at. Vision models have
-// been comparatively weak at following tangled lines, while people do it with no
-// language or recognition skills.
+// lineTrace draws crossing curves in one colour. Two starts are marked (circle
+// first, then square) and the answer is the number each line ends at.
+//
+// All lines share a colour on purpose. Colour would let a script separate them
+// with a simple filter, and it does not help people who can't tell the hues apart.
+// In exchange, the layout must be readable by shape alone: lines may cross but may
+// not run alongside each other, which layoutLines enforces.
 func lineTrace(r *rand.Rand) (Public, Answer, error) {
 	const w, h = 440, 300
 	c := newCanvas(w, h, paper)
-	palette := []color.NRGBA{{70, 96, 150, 255}, {126, 92, 150, 255}, {64, 130, 128, 255}}
-	ends := r.Perm(lineCount)
-	marked := r.Perm(lineCount)[:2]
 	rowY := func(i int) float64 { return 34 + float64(i)*(h-68)/(lineCount-1) }
-	for i := range lineCount {
-		x0, y0 := 40.0, rowY(i)
-		x3, y3 := float64(w-60), rowY(ends[i])
-		x1, y1 := 120+r.Float64()*110, 10+r.Float64()*(h-20)
-		x2, y2 := 200+r.Float64()*110, 10+r.Float64()*(h-20)
-		col := palette[i%len(palette)]
-		px, py := x0, y0
-		const steps = 48
-		for s := 1; s <= steps; s++ {
-			t := float64(s) / steps
-			u := 1 - t
-			x := u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3
-			y := u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3
-			c.segment(px, py, x, y, 3, col)
-			px, py = x, y
+	ends, marked, curves := layoutLines(r, w, h, rowY)
+	for _, curve := range curves {
+		for s := 1; s < len(curve); s++ {
+			c.segment(curve[s-1][0], curve[s-1][1], curve[s][0], curve[s][1], 3, lineInk)
 		}
-		c.disc(x0, y0, 4, ink)
+		c.disc(curve[0][0], curve[0][1], 4, ink)
 	}
 	for i := range lineCount {
 		c.digit(i+1, float64(w-44), rowY(i)-11, 11, 3, ink)
@@ -163,6 +158,106 @@ func lineTrace(r *rand.Rand) (Public, Answer, error) {
 	}
 	return Public{Family: LineTrace, Images: []string{url}, Options: lineCount, Markers: 2},
 		Answer{Family: LineTrace, Values: []int{ends[marked[0]], ends[marked[1]]}}, nil
+}
+
+// layoutLines samples layouts until one is readable. It returns the best layout
+// found if none qualifies, which the tests show does not happen in practice.
+func layoutLines(r *rand.Rand, w, h int, rowY func(int) float64) (ends, marked []int, curves [][][2]float64) {
+	best := -1
+	for range layoutAttempts {
+		e := r.Perm(lineCount)
+		m := r.Perm(lineCount)[:2]
+		cs := make([][][2]float64, lineCount)
+		for i := range lineCount {
+			cs[i] = bezier(r, 40, rowY(i), float64(w-60), rowY(e[i]), h)
+		}
+		run := longestCloseRun(cs)
+		crossed := min(crossings(cs, m[0]), crossings(cs, m[1]))
+		if best < 0 || (crossed >= minCrossings && run < best) {
+			best, ends, marked, curves = run, e, m, cs
+		}
+		if crossed >= minCrossings && run <= maxCloseRun {
+			return e, m, cs
+		}
+	}
+	return ends, marked, curves
+}
+
+// bezier draws an S-curve that leaves and arrives near horizontal. Lines therefore
+// meet in the middle at a clear angle, instead of sharing a long stretch.
+func bezier(r *rand.Rand, x0, y0, x3, y3 float64, h int) [][2]float64 {
+	jitter := func() float64 { return (r.Float64() - 0.5) * 50 }
+	limit := func(y float64) float64 { return max(10, min(float64(h-10), y)) }
+	x1, y1 := 130+r.Float64()*60, limit(y0+jitter())
+	x2, y2 := 240+r.Float64()*60, limit(y3+jitter())
+	const steps = 48
+	out := make([][2]float64, steps+1)
+	for s := range steps + 1 {
+		t := float64(s) / steps
+		u := 1 - t
+		out[s] = [2]float64{
+			u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3,
+			u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3,
+		}
+	}
+	return out
+}
+
+// longestCloseRun returns the most consecutive points on any curve that lie within
+// closeDistance of another single curve. A clean crossing gives a short run, and
+// two lines travelling together give a long one.
+func longestCloseRun(curves [][][2]float64) int {
+	longest := 0
+	for i, a := range curves {
+		for j, b := range curves {
+			if i == j {
+				continue
+			}
+			run := 0
+			for _, p := range a {
+				near := false
+				for _, q := range b {
+					if math.Hypot(p[0]-q[0], p[1]-q[1]) < closeDistance {
+						near = true
+						break
+					}
+				}
+				if near {
+					run++
+					longest = max(longest, run)
+					if longest > maxCloseRun {
+						return longest // Already rejected, so stop early.
+					}
+				} else {
+					run = 0
+				}
+			}
+		}
+	}
+	return longest
+}
+
+// crossings counts how many other lines the given line crosses.
+func crossings(curves [][][2]float64, line int) int {
+	count := 0
+	for j, other := range curves {
+		if j != line && intersects(curves[line], other) {
+			count++
+		}
+	}
+	return count
+}
+
+func intersects(a, b [][2]float64) bool {
+	side := func(p, q, x [2]float64) float64 { return (q[0]-p[0])*(x[1]-p[1]) - (q[1]-p[1])*(x[0]-p[0]) }
+	for i := 1; i < len(a); i++ {
+		for j := 1; j < len(b); j++ {
+			if side(a[i-1], a[i], b[j-1])*side(a[i-1], a[i], b[j]) < 0 && side(b[j-1], b[j], a[i-1])*side(b[j-1], b[j], a[i]) < 0 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // gapRings asks which cells hold a ring with a gap, in a Landolt C style. A
@@ -202,21 +297,36 @@ func gapRings(r *rand.Rand) (Public, Answer, error) {
 		Answer{Family: GapRings, Values: values}, nil
 }
 
-// shape returns a random asymmetric polygon centred at the origin. A notch and
-// an uneven outline make it unambiguous at any rotation.
+// shape returns a smooth, random, asymmetric outline centred at the origin. It
+// stays inside the circle the widget clips it to at every rotation. A deep notch
+// makes the orientation easy to judge.
 func shape(r *rand.Rand) [][2]float64 {
-	n := 9 + r.IntN(4)
-	pts := make([][2]float64, n)
+	n := 7 + r.IntN(3)
+	ctrl := make([][2]float64, n)
 	notch := r.IntN(n)
 	for i := range n {
-		radius := 24 + r.Float64()*26
+		radius := 26 + r.Float64()*22
 		if i == notch {
-			radius = 12
+			radius = 10
 		}
 		a := 2 * math.Pi * float64(i) / float64(n)
-		pts[i] = [2]float64{math.Cos(a) * radius, math.Sin(a) * radius}
+		ctrl[i] = [2]float64{math.Cos(a) * radius, math.Sin(a) * radius}
 	}
-	return pts
+	// A closed Catmull-Rom spline through the control points rounds the outline.
+	const perSegment = 8
+	out := make([][2]float64, 0, n*perSegment)
+	for i := range n {
+		p0, p1, p2, p3 := ctrl[(i+n-1)%n], ctrl[i], ctrl[(i+1)%n], ctrl[(i+2)%n]
+		for s := range perSegment {
+			t := float64(s) / perSegment
+			var q [2]float64
+			for k := range 2 {
+				q[k] = 0.5 * (2*p1[k] + (p2[k]-p0[k])*t + (2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t*t + (3*p1[k]-p0[k]-3*p2[k]+p3[k])*t*t*t)
+			}
+			out = append(out, q)
+		}
+	}
+	return out
 }
 
 func drawShape(pts [][2]float64, degrees float64, r *rand.Rand) (string, error) {
@@ -234,7 +344,7 @@ func drawShape(pts [][2]float64, degrees float64, r *rand.Rand) (string, error) 
 
 // rotateMatch shows two pairs. Each pair is a reference and a rotated copy that
 // the user turns with a slider or arrow keys. Two pairs reduce blind guessing to
-// about 0.4% per attempt.
+// about 1.2% per attempt.
 func rotateMatch(r *rand.Rand) (Public, Answer, error) {
 	var images []string
 	var values []int

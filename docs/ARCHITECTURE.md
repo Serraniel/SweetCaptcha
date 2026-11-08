@@ -23,13 +23,13 @@ sequenceDiagram
     F->>S: POST /v1/challenge
     S-->>F: sealed challenge, proof-of-work params, collector URLs
     F->>F: solve proof of work in a Worker
-    Note over P,F: Standard mode waits for form submit, interaction or a timeout
+    Note over P,F: Standard mode waits up to 2.5 s for the visitor's first input
     P->>F: finish(interaction features)
     F->>S: POST /v1/submit (nonces, signals)
     alt no concern
         S-->>F: token
-    else soft evidence
-        S-->>F: harder proof of work, then token
+    else soft evidence, or no input
+        S-->>F: checkbox; the click is scored, then token or puzzle
     else strong evidence
         S-->>F: puzzle or wait path, then token
     else definitive
@@ -41,7 +41,9 @@ sequenceDiagram
     S-->>B: success, score, reasons
 ```
 
-In standard mode, a form's token is minted when the form is submitted, so the evidence covers the whole interaction. Pages that use a callback get a token shortly after the first interaction, or after 8 seconds idle. A token minted before interaction carries no behaviour evidence, which is a known gap for bots that wait.
+In standard mode, verification runs 0.6 s after the visitor's first pointer, touch or key input, or when the form is sent, whichever comes first. With no input for 2.5 s, the server asks for the checkbox, so that there is an interaction to judge. Focusing a field doesn't count as input, because drivers fill fields without any.
+
+This means a visitor who moves the pointer and later clicks Send is judged on the movement only. The click on Send is no longer part of the evidence, which makes agents that move first and act later harder to catch than with submit-time verification. The checkbox step closes part of that gap: a click with no pointer path to it, or one made by script, leads to a puzzle.
 
 ## What is trusted
 
@@ -71,7 +73,7 @@ The engine starts from a prior log-odds of −2, about 12%, and adds capped per-
 | Band (default) | Response |
 |---|---|
 | p < 0.5 | Pass |
-| 0.5 ≤ p < 0.8 | Step-up proof of work |
+| 0.5 ≤ p < 0.8, or no input | Checkbox, with harder proof of work behind it |
 | p ≥ 0.8 | Puzzle or wait path |
 | p ≥ 0.995, with hard and network evidence | Deny |
 | Explicit automation marker | Deny (`policy.on_definitive`) |
@@ -80,9 +82,11 @@ Behaviour can never cause a deny on its own: at realistic base rates it can't be
 
 ## Interactive tasks
 
-Image recognition grids are not used, because they are cheaply solved. There are three procedurally generated families: tracing tangled lines, finding rings with gaps, and rotating shapes to match. Each has a keyboard path, answers stay on the server, and each puzzle allows one answer. These tasks have a shrinking margin against vision models and should not be treated as a security boundary.
+Tasks open in a dialog that closes with its button, Escape, or a click outside it. Closing returns the widget to the checkbox, cancels a held form submission, and ticking it again reopens the same task while it is valid.
 
-None of them suits everyone, so the **wait path** offers a longer computation with no task. It costs an attacker CPU and time, reports a low score, and is closed to clients with explicit automation markers. A site can also show a support link.
+Image recognition grids are not used, because they are cheaply solved. There are three procedurally generated families: tracing crossing lines of one colour, finding rings with gaps, and rotating shapes to match. Each has a keyboard path, answers stay on the server, and each puzzle allows one answer. These tasks have a shrinking margin against vision models and should not be treated as a security boundary.
+
+None of them suits everyone, so the **wait path** offers a longer computation instead. It is a trade-off: a bot that reaches it can pay with CPU, which a task would not allow. To limit that, it is closed to any client with contradictions or automation markers, capped per address, and reported as `via: wait` with a lower score. Sites with high-value actions can reject `via: wait` or set `wait_fallback: false`, and should then offer another accessible route. A site can also show a support link.
 
 ## Editions
 

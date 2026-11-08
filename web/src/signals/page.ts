@@ -125,7 +125,6 @@ document.addEventListener('scroll', () => {
 
 document.addEventListener('wheel', touched, opts);
 document.addEventListener('touchstart', touched, opts);
-document.addEventListener('focusin', touched, opts);
 
 function pathFeatures(): { straightness: number; speedCv: number; dirChanges: number; sketch: string } {
   const result = { straightness: 0, speedCv: 0, dirChanges: 0, sketch: '' };

@@ -88,8 +88,10 @@ function loadCollector(src: string, integrity: string): Promise<void> {
   return collectorLoad;
 }
 
-const IDLE_FINISH_MS = 8000;
-const INTERACT_FINISH_MS = 1200;
+// Verification waits briefly for the visitor's first input, so that the evidence
+// includes some interaction. Without input, the server asks for the checkbox.
+const NO_INPUT_FINISH_MS = 2500;
+const AFTER_INPUT_FINISH_MS = 600;
 const FRAME_LOAD_MS = 15000;
 
 class Widget {
@@ -110,7 +112,6 @@ class Widget {
   private pendingSubmit: { form: HTMLFormElement; submitter: HTMLElement | null } | null = null;
   private timers: number[] = [];
   private expiryTimer = 0;
-  private overlay: HTMLDivElement | null = null;
   private onSubmit: ((e: SubmitEvent) => void) | null = null;
   private form: HTMLFormElement | null = null;
   private deferred: boolean;
@@ -190,7 +191,7 @@ class Widget {
       e.preventDefault();
       e.stopImmediatePropagation();
       this.pendingSubmit = { form: this.form!, submitter: e.submitter };
-      this.requestFinish();
+      this.requestFinish(true);
     };
     this.form.addEventListener('submit', this.onSubmit, true);
   }
@@ -217,7 +218,7 @@ class Widget {
         break;
       case 'pow-ready':
         this.powReady = true;
-        if (this.pendingSubmit || this.pendingResolve.length) this.requestFinish();
+        if (this.pendingSubmit || this.pendingResolve.length) this.requestFinish(true);
         else this.armIdle();
         break;
       case 'token':
@@ -228,22 +229,20 @@ class Widget {
         break;
       case 'overlay':
         this.setOverlay(Boolean(m.on));
+        // Closing a task cancels a held form submission. The visitor sends again.
+        if (m.dismissed) this.pendingSubmit = null;
         break;
     }
   };
 
   private armTriggers(): void {
     window.__sweetcaptchaPage?.onInteract(() => {
-      if (resolve(this.opts.callback)) {
-        // Pages that enable their submit button from the callback need a token
-        // before the final click, so mint shortly after the first interaction.
-        this.timers.push(window.setTimeout(() => this.requestFinish(), INTERACT_FINISH_MS));
-      }
+      this.timers.push(window.setTimeout(() => this.requestFinish(), AFTER_INPUT_FINISH_MS));
     });
   }
 
   private armIdle(): void {
-    this.timers.push(window.setTimeout(() => this.requestFinish(), IDLE_FINISH_MS));
+    this.timers.push(window.setTimeout(() => this.requestFinish(), NO_INPUT_FINISH_MS));
   }
 
   private start(action?: string, cdata?: string): void {
@@ -258,12 +257,18 @@ class Widget {
     });
   }
 
-  requestFinish(): void {
-    if (!this.ready) return;
-    if (!this.powReady || this.finishing || this.token) return;
+  requestFinish(user = false): void {
+    if (!this.ready || this.token) return;
+    if (this.finishing) {
+      // The frame is waiting for the checkbox. When the visitor sends the form,
+      // tell it, so that it can prompt or open the pending task.
+      if (user) this.post({ type: 'finish', user });
+      return;
+    }
+    if (!this.powReady) return;
     this.finishing = true;
     const page = window.__sweetcaptchaPage;
-    this.post({ type: 'finish', behaviour: page?.features(), artefacts: page?.artefacts() });
+    this.post({ type: 'finish', behaviour: page?.features(), artefacts: page?.artefacts(), user });
   }
 
   execute(action?: string): Promise<string> {
@@ -330,34 +335,67 @@ class Widget {
     this.pendingResolve.length = 0;
   }
 
+  // A task opens as a popup at the widget, not as a page-wide modal. It is placed
+  // so that it stays inside the viewport, and it follows the page on scroll.
   private setOverlay(on: boolean): void {
-    if (on && !this.overlay) {
-      const o = document.createElement('div');
-      Object.assign(o.style, {
-        position: 'fixed', inset: '0', background: 'rgba(0,0,0,.45)', zIndex: '2147483646',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px',
-      });
-      this.overlay = o;
+    if (on && !this.popup) {
+      this.popup = true;
       this.saved = this.frame.getAttribute('style') ?? '';
-      document.body.appendChild(o);
+      const r = this.frame.getBoundingClientRect();
+      // Keep the widget's space, so the page does not shift while the popup is open.
+      this.host.style.minWidth = `${r.width}px`;
+      this.host.style.minHeight = `${r.height}px`;
       Object.assign(this.frame.style, {
-        position: 'fixed', zIndex: '2147483647', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-        width: 'min(480px, calc(100vw - 24px))', height: 'min(720px, calc(100vh - 24px))',
-        opacity: '1', borderRadius: '12px', border: '0',
+        position: 'fixed', zIndex: '2147483647', opacity: '1', border: '0', borderRadius: '12px',
+        boxShadow: '0 12px 40px rgba(0,0,0,.3)', transform: 'none',
       });
       this.frame.removeAttribute('aria-hidden');
       this.frame.tabIndex = 0;
+      this.place();
+      window.addEventListener('resize', this.place);
+      window.addEventListener('scroll', this.place, true);
+      document.addEventListener('click', this.onOutside, true);
       this.frame.focus();
-    } else if (!on && this.overlay) {
-      this.overlay.remove();
-      this.overlay = null;
+    } else if (!on && this.popup) {
+      this.popup = false;
+      window.removeEventListener('resize', this.place);
+      window.removeEventListener('scroll', this.place, true);
+      document.removeEventListener('click', this.onOutside, true);
       this.frame.setAttribute('style', this.saved);
+      this.host.style.minWidth = '';
+      this.host.style.minHeight = '';
       if (this.invisible) {
         this.frame.setAttribute('aria-hidden', 'true');
         this.frame.tabIndex = -1;
       }
     }
   }
+
+  private popup = false;
+
+  private place = (): void => {
+    const margin = 8;
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    const w = Math.min(440, vw - 2 * margin);
+    const h = Math.min(660, vh - 2 * margin);
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
+    const r = this.host.getBoundingClientRect();
+    const visible = r.width > 0 && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
+    let left = (vw - w) / 2;
+    let top = (vh - h) / 2;
+    if (visible) {
+      left = clamp(r.left, margin, vw - w - margin);
+      if (r.top + h <= vh - margin) top = Math.max(r.top, margin);
+      else if (r.bottom - h >= margin) top = r.bottom - h;
+      else top = clamp(r.top, margin, vh - h - margin);
+    }
+    Object.assign(this.frame.style, { left: `${left}px`, top: `${top}px`, width: `${w}px`, height: `${h}px` });
+  };
+
+  private onOutside = (e: Event): void => {
+    if (e.target !== this.frame) this.post({ type: 'dismiss' });
+  };
 
   private saved = '';
 

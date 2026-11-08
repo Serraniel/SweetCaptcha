@@ -19,8 +19,8 @@ COPY internal/ internal/
 COPY --from=web /src/internal/assets/dist/ internal/assets/dist/
 ENV CGO_ENABLED=0
 RUN mkdir -p /out/data/ipdata \
- && go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/sweetcaptcha ./cmd/sweetcaptcha \
- && go build -trimpath -ldflags "-s -w -X main.version=${VERSION}-strict" -tags strictonly -o /out/sweetcaptcha-strict ./cmd/sweetcaptcha
+ && go build -trimpath -ldflags "-s -w -X github.com/Serraniel/SweetCaptcha/internal/edition.Version=${VERSION}" -o /out/sweetcaptcha ./cmd/sweetcaptcha \
+ && go build -trimpath -ldflags "-s -w -X github.com/Serraniel/SweetCaptcha/internal/edition.Version=${VERSION}-strict" -tags strictonly -o /out/sweetcaptcha-strict ./cmd/sweetcaptcha
 
 # Strict-only image: proof of work only. The collectors and the risk engine are not
 # compiled in or embedded, so no configuration can turn them on.

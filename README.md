@@ -11,7 +11,7 @@ scripts/init-env.sh          # creates .env with random secrets, and local confi
 docker compose up -d --build
 ```
 
-Open <http://localhost:8787/demo/> to try each mode and provider API.
+Open <http://localhost:8787/demo/> to try each mode and provider API. The `demo-challenge` site always asks for a task, so you can see what a questionable visitor gets.
 
 For the strict-only build, which contains no detection code:
 
@@ -52,9 +52,9 @@ To migrate from another provider, change its base URL to your SweetCaptcha host:
 
 | Evidence | What happens | Visitor sees |
 |---|---|---|
-| Nothing suspicious | Token issued | A brief "Verified" |
-| Soft evidence | More proof of work | A short delay |
-| Strong contradictions | Interactive task, or a longer wait with no task | A puzzle or a progress bar |
+| Nothing suspicious | Token issued | A brief spinner, then "Verified" |
+| Soft evidence, or no input at all | Checkbox; the click is checked, and more proof of work runs meanwhile | "Verify you are human" |
+| Strong evidence | Interactive task. If the browser shows no contradictions, a long calculation is offered as an alternative | A puzzle |
 | Explicit automation markers, or strong evidence combined with network evidence | Denied, with an optional support link | An error |
 
 The score, reason codes and route are available only to your server, at verification. Details are in [Architecture](docs/ARCHITECTURE.md), and every signal is in the [signal register](docs/SIGNALS.md).
@@ -85,8 +85,9 @@ From the [lab](docs/LAB_RESULTS.md), which runs real Chromium and the real binar
 | Stock Playwright | Denied |
 | Automation flag hidden, agent-style input | Puzzle |
 | Script-patched `webdriver` | Puzzle |
+| Agent that waits, then clicks the checkbox | Puzzle |
 | Humanised pointer and typing | **Passes** |
-| Fully forged signal document | **Passes**; more proof of work under native TLS |
+| Fully forged signal document | **Passes**; the checkbox step under native TLS, whose click data can also be forged |
 
 ## Privacy
 

@@ -107,12 +107,17 @@ type Policy struct {
 	OnDefinitive string `yaml:"on_definitive"`
 	// Shadow records decisions without enforcing them.
 	Shadow bool `yaml:"shadow"`
+	// ScoreOnly never shows a checkbox or task. Every request gets a token whose
+	// score the site must check, as with reCAPTCHA v3. Only for sites that do check it.
+	ScoreOnly bool `yaml:"score_only"`
 }
 
 // Limits rate-limits challenge issuance per pseudonymised client address.
 type Limits struct {
 	SoftPerMinute int64 `yaml:"soft_per_minute"`
 	HardPerMinute int64 `yaml:"hard_per_minute"`
+	// WaitPerHour limits uses of the wait path per pseudonymised address.
+	WaitPerHour int64 `yaml:"wait_per_hour"`
 }
 
 // Site is one integration.
@@ -317,6 +322,9 @@ func (s *Site) finish() error {
 	}
 	if s.Limits.HardPerMinute == 0 {
 		s.Limits.HardPerMinute = 300
+	}
+	if s.Limits.WaitPerHour == 0 {
+		s.Limits.WaitPerHour = 5
 	}
 	if len(s.Puzzles) == 0 {
 		s.Puzzles = []string{"line-trace", "gap-rings", "rotate-match"}

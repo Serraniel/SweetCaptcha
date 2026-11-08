@@ -36,3 +36,13 @@ sites:
     secret: ${SWEETCAPTCHA_DEMO_STRICT_SECRET}
     mode: strict
     hostnames: [localhost, 127.0.0.1]
+
+  # Always asks for a task, so you can see what a questionable visitor gets.
+  - name: demo-challenge
+    sitekey: sc_demo_challenge
+    secret: ${SWEETCAPTCHA_DEMO_SECRET}-challenge
+    mode: standard
+    hostnames: [localhost, 127.0.0.1]
+    policy:
+      step_up_above: 0.001
+      puzzle_above: 0.002

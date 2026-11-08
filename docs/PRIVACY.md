@@ -39,6 +39,7 @@ The strict mode argument, that a proof-of-work solution isn't "information store
 | IP address | Never stored |
 | Rate counter | 2 minutes, under a daily-rotating pseudonym |
 | Pointer path hash | 10 minutes, keyed per site and day |
+| Wait path counter | 1 hour, under a daily-rotating pseudonym |
 | Rule identifiers and score during escalation | About 11 minutes |
 | Reason codes inside a token | Until the token expires |
 | Aggregate counters | 35 days, counts only |

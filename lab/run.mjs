@@ -72,6 +72,8 @@ async function outcome(page, key, timeout = 45000) {
     for (const f of page.frames()) {
       if (!f.url().includes('/v1/frame')) continue;
       if (await f.locator('.modal h1').count().catch(() => 0)) return { result: 'puzzle', reasons: [] };
+      if (await f.locator('button.check:not([data-task])').count().catch(() => 0)) return { result: 'checkbox', reasons: [] };
+      if (await f.locator('button.check[data-task]').count().catch(() => 0)) return { result: 'puzzle', reasons: [] };
       const mark = await f.locator('.mark.bad').count().catch(() => 0);
       if (mark) return { result: 'deny', reasons: [] };
     }
@@ -123,6 +125,20 @@ async function humanStyleForm(page) {
   await page.waitForTimeout(250);
   await moveLikePerson(page, field, await centre(page.locator('#send')));
   await page.waitForTimeout(150);
+  await page.mouse.down();
+  await page.mouse.up();
+}
+
+function widgetFrame(page) {
+  return page.frames().find((f) => f.url().includes('/v1/frame'));
+}
+
+// Moves to the checkbox over a curved path, then clicks, as a person would.
+async function humanClickCheckbox(page, from = [60, 60]) {
+  const box = widgetFrame(page).locator('button.check');
+  await box.waitFor();
+  await moveLikePerson(page, from, await centre(box));
+  await page.waitForTimeout(120);
   await page.mouse.down();
   await page.mouse.up();
 }
@@ -364,7 +380,7 @@ async function run() {
   await scenario('HTTP client naming itself', 'HTTP client', 'deny', () => httpBot('python-requests/2.32', null));
   await scenario('HTTP client claiming Chrome, no signals', 'HTTP client', 'puzzle', () => httpBot(ua, null));
   await scenario('HTTP client with a fully forged signal document', 'Forged protocol', 'pass', () => httpBot(ua, forgedSignals(ua, major)));
-  await scenario('Same forgery, native TLS: handshake exposes it', 'Forged protocol', 'stepup', () => httpBot(ua, forgedSignals(ua, major), TLS_BASE));
+  await scenario('Same forgery, native TLS: handshake exposes it', 'Forged protocol', 'interact', () => httpBot(ua, forgedSignals(ua, major), TLS_BASE));
 
   // Browser automation at increasing levels of effort.
   await scenario('Stock Playwright, headless', 'Stock automation', 'deny', () => withBrowser({}, async (b) => {
@@ -394,14 +410,36 @@ async function run() {
     const r = await outcome(page, 'lab_standard');
     return r.via === 'stepup' ? { ...r, result: 'stepup-pass' } : r;
   }));
-  await scenario('Flag hidden, UA spoofed, humanised pointer and typing', 'Humanised browser', ['pass', 'stepup-pass'], () => withBrowser(
+  await scenario('Flag hidden, UA spoofed, humanised pointer and typing', 'Humanised browser', ['pass', 'checkbox-pass'], () => withBrowser(
     { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
       const ctx = await b.newContext({ userAgent: ua });
       const page = await ctx.newPage();
       await page.goto(`${BASE}/demo/?k=lab_standard`);
       await humanStyleForm(page);
       const r = await outcome(page, 'lab_standard');
-      return r.via === 'stepup' ? { ...r, result: 'stepup-pass' } : r;
+      return r.via === 'checkbox' ? { ...r, result: 'checkbox-pass' } : r;
+    }));
+  await scenario('Agent waits, then clicks the checkbox directly', 'Default agent', 'puzzle', () => withBrowser(
+    { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
+      const ctx = await b.newContext({ userAgent: ua });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/demo/?k=lab_standard`);
+      await widgetFrame(page).locator('button.check').waitFor({ timeout: 15000 });
+      await widgetFrame(page).locator('button.check').click();
+      return outcome(page, 'lab_standard');
+    }));
+  await scenario('Visitor who does not move, then ticks the checkbox', 'Humanised browser', 'checkbox-pass', () => withBrowser(
+    { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
+      const ctx = await b.newContext({ userAgent: ua });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/demo/?k=lab_standard`);
+      await humanClickCheckbox(page);
+      let r = await outcome(page, 'lab_standard');
+      if (r.result === 'checkbox') r = await outcome(page, 'lab_standard');
+      // The token is in the form now; send it the way a person would.
+      await page.locator('#send').click();
+      r = await outcome(page, 'lab_standard');
+      return r.via === 'checkbox' ? { ...r, result: 'checkbox-pass' } : r;
     }));
 
   // Mechanics.
@@ -412,14 +450,18 @@ async function run() {
   });
   await scenario('Strict mode: all four provider form flows', 'Compatibility', 'pass', providerForms);
   await scenario('reCAPTCHA v3, Turnstile and hCaptcha JavaScript APIs', 'Compatibility', 'pass', programmaticApis);
-  await scenario('Browser scrypt verified by the server', 'Mechanics', 'pass', () => withBrowser(
+  await scenario('Checkbox step, with scrypt proof of work in the browser', 'Mechanics', 'pass', () => withBrowser(
     { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
       const ctx = await b.newContext({ userAgent: ua });
       const page = await ctx.newPage();
       await page.goto(`${BASE}/demo/?k=lab_stepup`);
       await humanStyleForm(page);
+      const first = await outcome(page, 'lab_stepup');
+      if (first.result !== 'checkbox') return { ...first, result: 'unexpected-' + first.result };
+      const send = await centre(page.locator('#send'));
+      await humanClickCheckbox(page, send);
       const r = await outcome(page, 'lab_stepup');
-      return r.via === 'stepup' ? r : { ...r, result: 'unexpected-' + r.result };
+      return r.via === 'checkbox' ? r : { ...r, result: 'unexpected-' + r.result };
     }));
   await scenario('Puzzle interface, then the wait path', 'Mechanics', 'pass', () => withBrowser(
     { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
@@ -429,10 +471,36 @@ async function run() {
       await humanStyleForm(page);
       const r = await outcome(page, 'lab_puzzle');
       if (r.result !== 'puzzle') return r;
-      await page.screenshot({ path: join(out, 'puzzle.png') });
       const frame = page.frames().find((f) => f.url().includes('/v1/frame'));
-      await frame.getByRole('button', { name: /wait instead/ }).click();
-      await page.waitForURL('**/demo/verify', { timeout: 60000 });
+      // Sending the form opens the pending task as a popup at the widget.
+      await frame.locator('dialog .modal-head').waitFor({ timeout: 5000 }).catch(() => { throw new Error('task did not open on send'); });
+      await page.screenshot({ path: join(out, 'puzzle.png') });
+      // The popup must stay inside a small viewport.
+      await page.setViewportSize({ width: 360, height: 480 });
+      await page.waitForTimeout(200);
+      const box = await page.locator('iframe').boundingBox();
+      if (box.x < 0 || box.y < 0 || box.x + box.width > 360 || box.y + box.height > 480) {
+        return { result: 'popup-outside-viewport', reasons: [JSON.stringify(box)] };
+      }
+      await page.setViewportSize({ width: 900, height: 760 });
+      // Escape closes the task and leaves the checkbox. Ticking it reopens the task.
+      await page.keyboard.press('Escape');
+      await frame.locator('button.check').waitFor({ timeout: 5000 }).catch(() => { throw new Error('Escape did not close the task'); });
+      if (await frame.locator('dialog').count()) return { result: 'dialog-not-closed', reasons: [] };
+      // A click elsewhere on the page must also close it.
+      await humanClickCheckbox(page, await centre(page.locator('#send')));
+      await frame.locator('dialog .modal-head').waitFor({ timeout: 5000 }).catch(() => { throw new Error('ticking did not reopen the task'); });
+      // The popup is placed by the host page after a message from the frame.
+      await page.waitForFunction(() => document.querySelector('iframe')?.style.position === 'fixed');
+      await page.mouse.click(5, 5);
+      await frame.locator('button.check').waitFor({ timeout: 5000 }).catch(() => { throw new Error('outside click did not close the task'); });
+      await humanClickCheckbox(page, await centre(page.locator('#send')));
+      await frame.locator('dialog .modal-head').waitFor({ timeout: 5000 }).catch(() => { throw new Error('second reopen failed'); });
+      await frame.getByRole('button', { name: /can't do this task/ }).click();
+      // Closing the task cancelled the held submission, so send again once verified.
+      await page.waitForFunction(() => document.querySelector('input[name="sc-response"]')?.value, null, { timeout: 60000 });
+      await page.locator('#send').click();
+      await page.waitForURL('**/demo/verify', { timeout: 10000 });
       const after = await outcome(page, 'lab_puzzle');
       return after.via === 'wait' ? after : { ...after, result: 'unexpected-' + after.result };
     }));

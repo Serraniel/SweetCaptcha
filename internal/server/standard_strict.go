@@ -4,7 +4,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/Serraniel/SweetCaptcha/internal/config"
@@ -18,7 +17,7 @@ func newStandard(*config.Config) *standard { return &standard{} }
 
 func (*standard) routes(*http.ServeMux, *Server) {}
 
-func (*standard) submit(w http.ResponseWriter, _ *http.Request, _ *Server, _ *config.Site, _ *claims, _ json.RawMessage) {
+func (*standard) submit(w http.ResponseWriter, _ *http.Request, _ *Server, _ *config.Site, _ *claims, _ submitRequest) {
 	writeJSON(w, http.StatusInternalServerError, submitResponse{Status: "retry"})
 }
 
