@@ -19,6 +19,7 @@ export const secrets = {
   lab_strict: 'lab-strict-secret-value',
   lab_stepup: 'lab-stepup-secret-value',
   lab_puzzle: 'lab-puzzle-secret-value',
+  lab_netmem: 'lab-netmem-secret-value',
 };
 
 export function buildAndStart() {

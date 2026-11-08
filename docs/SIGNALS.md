@@ -54,6 +54,7 @@ Weights are log-likelihood ratios: positive values raise suspicion and negative 
 | `net_datacenter` | network | +1.0 | The address is in a cloud or hosting range. VPN users also match this. |
 | `net_velocity` | network | +1.5 | Many challenges from one address in a short time. |
 | `net_velocity_high` | network | +3.0 | Far too many challenges from one address. |
+| `net_recent_failures` | network | +1.5 | This network (/24 or /48) failed hard checks or tasks at least 3 times in the last 30 minutes. |
 | `net_no_sec_fetch` | network | +1.5 | A browser claim with no Sec-Fetch headers. |
 | `net_no_accept_language` | network | +1.0 | A browser claim with no Accept-Language header. |
 | `beh_click_no_approach` | behaviour | +2.5 | Mouse clicks with no pointer movement leading to them. Keyboard and assistive-technology activations are excluded. |

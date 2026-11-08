@@ -531,3 +531,27 @@ func TestCustomRules(t *testing.T) {
 		t.Errorf("no rule should apply: %v", r["status"])
 	}
 }
+
+func TestNetworkRemembersHardFailures(t *testing.T) {
+	_, ts := newTest(t, stdSite)
+	// Three forged submissions from this network (no signals is hard evidence).
+	for range 3 {
+		ch, _ := stdChallenge(t, ts)
+		submit(t, ts, ch, nil, browserHeaders...)
+	}
+	// A clean browser from the same network now carries the memory as a reason.
+	ch, nonce := stdChallenge(t, ts)
+	r := submit(t, ts, ch, goodSignals(nonce), browserHeaders...)
+	if r["token"] == nil {
+		// Escalation is allowed; the evidence must still not deny on its own.
+		if r["status"] == "deny" {
+			t.Fatalf("network memory alone denied: %v", r)
+		}
+		return
+	}
+	m := verifyForm(t, ts.URL+"/v1/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
+	reasons, _ := json.Marshal(m["reasons"])
+	if !strings.Contains(string(reasons), "net_recent_failures") {
+		t.Errorf("expected net_recent_failures: %s", reasons)
+	}
+}

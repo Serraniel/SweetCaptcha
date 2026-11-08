@@ -130,6 +130,9 @@ func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, sit
 	if forced != "" {
 		decision = forced
 	}
+	if decision == "deny" || res.Hard {
+		s.noteNetworkFailure(r, site)
+	}
 	if site.Policy.Shadow {
 		if decision != "pass" {
 			s.stats.Add(ctx, site.Name, stats.ShadowDiff)
@@ -169,6 +172,7 @@ func (d *standard) buildInput(r *http.Request, s *Server, site *config.Site, c *
 	}
 	if addr := s.clientAddr(r); addr.IsValid() {
 		in.Datacenter, in.Tor = d.ip.Datacenter(addr), d.ip.Tor(addr)
+		in.NetFailures = s.networkFailures(r, site)
 	}
 	// Replay detection compares a sketch of the pointer path across challenges. It
 	// is keyed per site and day and expires in ten minutes, so it links nothing
@@ -336,6 +340,7 @@ func (d *standard) answer(w http.ResponseWriter, r *http.Request, s *Server) {
 		return
 	}
 	s.stats.Add(ctx, site.Name, stats.PuzzleFail)
+	s.noteNetworkFailure(r, site)
 	ev.Attempts++
 	if ev.Attempts >= maxAttempts {
 		if waitOpen(site, ev) && withinWaitQuota(r, s, site) {

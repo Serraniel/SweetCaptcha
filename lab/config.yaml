@@ -18,13 +18,13 @@ sites:
     secret: lab-standard-secret-value
     mode: standard
     hostnames: [localhost]
-    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000, network_memory: false}
   - name: lab-strict
     sitekey: lab_strict
     secret: lab-strict-secret-value
     mode: strict
     hostnames: [localhost]
-    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000, network_memory: false}
   # Forces a step-up, using scrypt, so the browser and server implementations are
   # exercised against each other.
   - name: lab-stepup
@@ -34,7 +34,7 @@ sites:
     hostnames: [localhost]
     policy: {step_up_above: 0.001, puzzle_above: 0.999, deny_above: 0.9999}
     pow: {step_up: {algo: scrypt, bits: 4, count: 2}}
-    limits: {soft_per_minute: 100000, hard_per_minute: 1000000}
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000, network_memory: false}
   # Forces a puzzle, to exercise the interface and the wait path.
   - name: lab-puzzle
     sitekey: lab_puzzle
@@ -43,4 +43,12 @@ sites:
     hostnames: [localhost]
     policy: {step_up_above: 0.001, puzzle_above: 0.002, deny_above: 0.9999}
     pow: {wait: {algo: sha256, bits: 14, count: 8}, wait_min_duration: 3s}
+    limits: {soft_per_minute: 100000, hard_per_minute: 1000000, network_memory: false}
+  # Remembers hard failures per network, to show the effect in one scenario. The
+  # other sites turn it off, because every lab scenario shares one address.
+  - name: lab-network-memory
+    sitekey: lab_netmem
+    secret: lab-netmem-secret-value
+    mode: standard
+    hostnames: [localhost]
     limits: {soft_per_minute: 100000, hard_per_minute: 1000000}

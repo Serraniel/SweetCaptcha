@@ -76,6 +76,7 @@ var Rules = []Rule{
 	{"net_datacenter", GroupNetwork, 1, "The address is in a cloud or hosting range. VPN users also match this."},
 	{"net_velocity", GroupNetwork, 1.5, "Many challenges from one address in a short time."},
 	{"net_velocity_high", GroupNetwork, 3, "Far too many challenges from one address."},
+	{"net_recent_failures", GroupNetwork, 1.5, "This network (/24 or /48) failed hard checks or tasks at least 3 times in the last 30 minutes."},
 	{"net_no_sec_fetch", GroupNetwork, 1.5, "A browser claim with no Sec-Fetch headers."},
 	{"net_no_accept_language", GroupNetwork, 1, "A browser claim with no Accept-Language header."},
 	{"beh_click_no_approach", GroupBehaviour, 2.5, "Mouse clicks with no pointer movement leading to them. Keyboard and assistive-technology activations are excluded."},
@@ -116,17 +117,19 @@ type TLSFacts struct {
 
 // Input is everything the engine evaluates for one submission.
 type Input struct {
-	Signals       *Signals
-	Nonce         string
-	Header        http.Header
-	TLS           *TLSFacts
-	Datacenter    bool
-	Tor           bool
-	Velocity      int64
-	SoftLimit     int64
-	ElapsedMS     int64
-	ExpectedHash  float64
-	Replay        bool
+	Signals      *Signals
+	Nonce        string
+	Header       http.Header
+	TLS          *TLSFacts
+	Datacenter   bool
+	Tor          bool
+	Velocity     int64
+	SoftLimit    int64
+	ElapsedMS    int64
+	ExpectedHash float64
+	Replay       bool
+	// NetFailures counts hard failures from the same network in the last 30 minutes.
+	NetFailures   int64
 	BrowserScript bool // True when the algorithm's JS speed bound applies.
 }
 
@@ -199,6 +202,9 @@ func evalNetwork(in Input, claim UAClaim, fire func(string)) {
 	}
 	if in.Tor {
 		fire("obs_tor")
+	}
+	if in.NetFailures >= 3 {
+		fire("net_recent_failures")
 	}
 	if in.SoftLimit > 0 {
 		switch {
