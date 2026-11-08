@@ -161,6 +161,10 @@ type Site struct {
 	WaitFallback *bool `yaml:"wait_fallback"`
 	// SupportURL is shown to anyone denied, as a route for human review.
 	SupportURL string `yaml:"support_url"`
+	// PrivacyURL and ImprintURL are linked from the widget, for sites whose privacy
+	// notice or legal imprint must be reachable from it.
+	PrivacyURL string `yaml:"privacy_url"`
+	ImprintURL string `yaml:"imprint_url"`
 	// TestMode is "", "pass" or "fail": skip everything, for integrator tests.
 	TestMode string `yaml:"test_mode"`
 	// Rules are operator-defined adjustments. See docs/OPERATIONS.md.
@@ -363,6 +367,11 @@ func (s *Site) finish() error {
 	}
 	if s.Limits.HardPerMinute == 0 {
 		s.Limits.HardPerMinute = 300
+	}
+	for name, u := range map[string]string{"support_url": s.SupportURL, "privacy_url": s.PrivacyURL, "imprint_url": s.ImprintURL} {
+		if u != "" && !strings.HasPrefix(u, "https://") && !strings.HasPrefix(u, "http://") {
+			return fmt.Errorf("%s must be an http or https URL", name)
+		}
 	}
 	if err := s.finishRules(); err != nil {
 		return err

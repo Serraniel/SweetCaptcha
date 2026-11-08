@@ -27,6 +27,9 @@ sites:
     secret: ${SWEETCAPTCHA_DEMO_SECRET}
     mode: standard
     hostnames: [localhost, 127.0.0.1]
+    # Your privacy notice and imprint, shown in small print in the widget.
+    # privacy_url: https://example.com/privacy
+    # imprint_url: https://example.com/imprint
     # Run with shadow: true first, to see what would be challenged. See docs/OPERATIONS.md.
     policy:
       shadow: false

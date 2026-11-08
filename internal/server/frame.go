@@ -44,6 +44,8 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Security-Policy", csp)
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	h.Set("Cache-Control", "no-store")
+	h.Set("X-Robots-Tag", "noindex, nofollow")
+	site := s.sites[key]
 	lang := pickLanguage(r.URL.Query().Get("l"), r.Header.Get("Accept-Language"), r.URL.Query().Get("p"))
 	dir := "ltr"
 	if rtlLanguages[lang] {
@@ -55,6 +57,10 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	b.WriteString(html.EscapeString(worker.Path))
 	b.WriteString(`" data-version="`)
 	b.WriteString(html.EscapeString(edition.Version))
+	b.WriteString(`" data-privacy="`)
+	b.WriteString(html.EscapeString(site.PrivacyURL))
+	b.WriteString(`" data-imprint="`)
+	b.WriteString(html.EscapeString(site.ImprintURL))
 	b.WriteString(`"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verification</title><link rel="stylesheet" href="/v1/assets/`)
 	b.WriteString(html.EscapeString(css.Path))
 	b.WriteString(`" integrity="`)
@@ -143,6 +149,7 @@ type transparency struct {
 }
 
 func (s *Server) handleTransparency(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("X-Robots-Tag", "noindex, nofollow")
 	site, ok := s.sites[r.URL.Query().Get("sitekey")]
 	if !ok {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "invalid-sitekey"})

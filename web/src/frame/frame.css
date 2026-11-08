@@ -52,6 +52,7 @@ dialog.modal::backdrop { background: transparent; }
 .text { flex: 1; min-width: 0; }
 .status { font-weight: 500; }
 .brand { font-size: 11px; color: var(--muted); }
+.brand a { color: var(--muted); }
 .links { display: flex; gap: 12px; flex-wrap: wrap; }
 button.link { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
 a { color: var(--accent); }

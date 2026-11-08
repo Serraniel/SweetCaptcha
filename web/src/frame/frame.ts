@@ -39,8 +39,23 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
   return n;
 }
 
+// The site's own privacy notice and imprint, when configured. Never the project's.
+function legalLinks(into: HTMLElement): void {
+  const d = document.documentElement.dataset;
+  for (const [href, label] of [[d.privacy, t.privacy], [d.imprint, t.imprint]] as const) {
+    if (!href) continue;
+    const a = el('a', '', label);
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    into.append(' · ', a);
+  }
+}
+
 function brandLine(): HTMLElement {
-  return el('div', 'brand', `SweetCaptcha ${document.documentElement.dataset.version ?? ''}`.trim());
+  const line = el('div', 'brand', `SweetCaptcha ${document.documentElement.dataset.version ?? ''}`.trim());
+  legalLinks(line);
+  return line;
 }
 
 function statusLine(message: string): HTMLElement {
@@ -551,6 +566,12 @@ function showPuzzle(r: SubmitReply, action: string, cdata: string, mine: number,
     a.target = '_blank';
     a.rel = 'noopener';
     box.append(a);
+  }
+  const legal = el('p', 'muted');
+  legalLinks(legal);
+  if (legal.childNodes.length) {
+    legal.firstChild?.remove(); // Drop the leading separator.
+    box.append(legal);
   }
 }
 

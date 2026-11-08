@@ -37,6 +37,8 @@ export interface Strings {
   stackOrder: string;
   stackFront: string;
   help: string;
+  privacy: string;
+  imprint: string;
 }
 
 export const locales: Record<string, Strings> = {
@@ -71,6 +73,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Which shape lies at the very back, underneath all the others?',
     stackFront: 'Which shape lies at the very front, on top of all the others?',
     help: 'Help',
+    privacy: 'Privacy',
+    imprint: 'Imprint',
   },
   de: {
     verifying: 'Überprüfung läuft',
@@ -103,6 +107,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Welche Form liegt ganz hinten, unter allen anderen?',
     stackFront: 'Welche Form liegt ganz vorne, über allen anderen?',
     help: 'Hilfe',
+    privacy: 'Datenschutz',
+    imprint: 'Impressum',
   },
   fr: {
     verifying: 'Vérification en cours',
@@ -135,6 +141,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Quelle forme se trouve tout au fond, sous toutes les autres ?',
     stackFront: 'Quelle forme se trouve tout devant, au-dessus de toutes les autres ?',
     help: 'Aide',
+    privacy: 'Confidentialité',
+    imprint: 'Mentions légales',
   },
   es: {
     verifying: 'Verificando',
@@ -167,6 +175,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: '¿Qué forma está al fondo del todo, debajo de las demás?',
     stackFront: '¿Qué forma está delante del todo, encima de las demás?',
     help: 'Ayuda',
+    privacy: 'Privacidad',
+    imprint: 'Aviso legal',
   },
   pt: {
     verifying: 'Verificando',
@@ -199,6 +209,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Qual forma está bem no fundo, por baixo de todas as outras?',
     stackFront: 'Qual forma está bem na frente, por cima de todas as outras?',
     help: 'Ajuda',
+    privacy: 'Privacidade',
+    imprint: 'Informações legais',
   },
   it: {
     verifying: 'Verifica in corso',
@@ -231,6 +243,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Quale forma si trova più in fondo, sotto tutte le altre?',
     stackFront: 'Quale forma si trova più in alto, sopra tutte le altre?',
     help: 'Aiuto',
+    privacy: 'Privacy',
+    imprint: 'Note legali',
   },
   nl: {
     verifying: 'Bezig met verifiëren',
@@ -263,6 +277,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Welke vorm ligt helemaal achteraan, onder alle andere?',
     stackFront: 'Welke vorm ligt helemaal vooraan, boven alle andere?',
     help: 'Hulp',
+    privacy: 'Privacy',
+    imprint: 'Colofon',
   },
   pl: {
     verifying: 'Trwa weryfikacja',
@@ -295,6 +311,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Który kształt leży na samym spodzie, pod wszystkimi innymi?',
     stackFront: 'Który kształt leży na samym wierzchu, nad wszystkimi innymi?',
     help: 'Pomoc',
+    privacy: 'Prywatność',
+    imprint: 'Nota prawna',
   },
   cs: {
     verifying: 'Probíhá ověření',
@@ -327,6 +345,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Který tvar leží úplně vzadu, pod všemi ostatními?',
     stackFront: 'Který tvar leží úplně vpředu, nad všemi ostatními?',
     help: 'Nápověda',
+    privacy: 'Ochrana soukromí',
+    imprint: 'Tiráž',
   },
   sv: {
     verifying: 'Verifierar',
@@ -359,6 +379,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Vilken form ligger längst bak, under alla andra?',
     stackFront: 'Vilken form ligger längst fram, ovanpå alla andra?',
     help: 'Hjälp',
+    privacy: 'Integritet',
+    imprint: 'Om webbplatsen',
   },
   ru: {
     verifying: 'Идёт проверка',
@@ -391,6 +413,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Какая фигура лежит в самом низу, под всеми остальными?',
     stackFront: 'Какая фигура лежит на самом верху, поверх всех остальных?',
     help: 'Справка',
+    privacy: 'Конфиденциальность',
+    imprint: 'Правовая информация',
   },
   uk: {
     verifying: 'Триває перевірка',
@@ -423,6 +447,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Яка фігура лежить у самому низу, під усіма іншими?',
     stackFront: 'Яка фігура лежить на самому верху, поверх усіх інших?',
     help: 'Довідка',
+    privacy: 'Конфіденційність',
+    imprint: 'Правова інформація',
   },
   tr: {
     verifying: 'Doğrulanıyor',
@@ -455,6 +481,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Hangi şekil en altta, diğerlerinin hepsinin altında?',
     stackFront: 'Hangi şekil en üstte, diğerlerinin hepsinin üzerinde?',
     help: 'Yardım',
+    privacy: 'Gizlilik',
+    imprint: 'Künye',
   },
   ar: {
     verifying: 'جارٍ التحقق',
@@ -487,6 +515,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'أي شكل يقع في الخلف تماماً، تحت جميع الأشكال الأخرى؟',
     stackFront: 'أي شكل يقع في المقدمة تماماً، فوق جميع الأشكال الأخرى؟',
     help: 'مساعدة',
+    privacy: 'الخصوصية',
+    imprint: 'بيانات قانونية',
   },
   hi: {
     verifying: 'सत्यापन हो रहा है',
@@ -519,6 +549,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'कौन-सा आकार सबसे पीछे है, बाकी सभी के नीचे?',
     stackFront: 'कौन-सा आकार सबसे आगे है, बाकी सभी के ऊपर?',
     help: 'सहायता',
+    privacy: 'गोपनीयता',
+    imprint: 'कानूनी जानकारी',
   },
   id: {
     verifying: 'Sedang memverifikasi',
@@ -551,6 +583,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Bentuk mana yang paling belakang, di bawah semua bentuk lain?',
     stackFront: 'Bentuk mana yang paling depan, di atas semua bentuk lain?',
     help: 'Bantuan',
+    privacy: 'Privasi',
+    imprint: 'Info hukum',
   },
   vi: {
     verifying: 'Đang xác minh',
@@ -583,6 +617,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: 'Hình nào nằm ở dưới cùng, bên dưới tất cả các hình khác?',
     stackFront: 'Hình nào nằm trên cùng, phía trên tất cả các hình khác?',
     help: 'Trợ giúp',
+    privacy: 'Quyền riêng tư',
+    imprint: 'Thông tin pháp lý',
   },
   zh: {
     verifying: '正在验证',
@@ -615,6 +651,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: '哪个图形在最底层，压在所有其他图形下面？',
     stackFront: '哪个图形在最上层，压在所有其他图形上面？',
     help: '帮助',
+    privacy: '隐私',
+    imprint: '法律信息',
   },
   'zh-TW': {
     verifying: '正在驗證',
@@ -647,6 +685,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: '哪個圖形在最底層，壓在所有其他圖形下面？',
     stackFront: '哪個圖形在最上層，壓在所有其他圖形上面？',
     help: '說明',
+    privacy: '隱私權',
+    imprint: '法律資訊',
   },
   ja: {
     verifying: '確認しています',
@@ -679,6 +719,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: '一番下（ほかのすべての図形の下）にある図形はどれですか？',
     stackFront: '一番上（ほかのすべての図形の上）にある図形はどれですか？',
     help: 'ヘルプ',
+    privacy: 'プライバシー',
+    imprint: '運営者情報',
   },
   ko: {
     verifying: '확인하는 중',
@@ -711,6 +753,8 @@ export const locales: Record<string, Strings> = {
     stackOrder: '다른 모든 도형 아래, 맨 뒤에 있는 도형은 무엇인가요?',
     stackFront: '다른 모든 도형 위, 맨 앞에 있는 도형은 무엇인가요?',
     help: '도움말',
+    privacy: '개인정보',
+    imprint: '법적 고지',
   },
 };
 
