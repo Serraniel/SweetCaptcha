@@ -294,6 +294,28 @@ async function run() {
       return r.via === 'checkbox' ? { ...r, result: 'checkbox-pass' } : r;
     }));
 
+  // Settings real people use, which must not lock them out.
+  await scenario('Compatibility: JIT disabled, humanised input', 'Compatibility', ['pass', 'checkbox-pass'], () => withBrowser(
+    { args: ['--disable-blink-features=AutomationControlled', '--js-flags=--jitless'] }, async (b) => {
+      const ctx = await b.newContext({ userAgent: ua });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/demo/?k=lab_standard`);
+      await humanStyleForm(page);
+      const r = await outcome(page, 'lab_standard', 90000);
+      return r.via === 'checkbox' ? { ...r, result: 'checkbox-pass' } : r;
+    }));
+  // A user-agent switcher makes Chromium claim to be Firefox. The engine then
+  // contradicts the claim, which is hard evidence: such visitors get a task, and
+  // the help page tells them to turn the switcher off for the site.
+  await scenario('Compatibility: user-agent switcher claiming Firefox', 'Compatibility', 'puzzle', () => withBrowser(
+    { args: ['--disable-blink-features=AutomationControlled'] }, async (b) => {
+      const ctx = await b.newContext({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0' });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/demo/?k=lab_standard`);
+      await humanStyleForm(page);
+      return outcome(page, 'lab_standard');
+    }));
+
   await scenario('Network memory: a clean visitor after three forged requests from the same network', 'Mechanics', 'remembered', async () => {
     for (let i = 0; i < 3; i++) await httpBot(ua, null, BASE, 'lab_netmem');
     const r = await httpBot(ua, forgedSignals(ua, major), BASE, 'lab_netmem');

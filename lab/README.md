@@ -1,6 +1,6 @@
 # Lab
 
-Two scripts run the real binary against real Chromium. Neither involves real people, so neither says anything about false positives on people.
+These scripts run the real binary against real Chromium. None involves real people, so none says anything about false positives on people.
 
 | Script | Purpose | Fails on |
 |---|---|---|
@@ -19,6 +19,26 @@ AI browser agents need a model API key and cost money per run, so they are not a
 3. Read the outcome on the result page: `via` and `reasons` show how it was judged.
 
 Record the agent, model, version and date with the result. Agents change quickly, so results without a date are not worth keeping.
+
+## Compatibility matrix
+
+Setups where real people are most often locked out. Automated rows run in `npm run lab`; manual rows need a person, and each needs a date and a result.
+
+| Setup | How it is tested | Expected | Last result |
+|---|---|---|---|
+| Chromium with JIT disabled | Automated | Pass, or checkbox then pass | Passes |
+| User-agent switcher (Chromium claiming Firefox) | Automated | A task; the help page advises turning the switcher off | Task |
+| Firefox desktop, default settings | Manual | Pass | Verified by the project owner on 2026-11-07 |
+| Firefox with `privacy.resistFingerprinting` | Manual | Pass or checkbox | Not tested yet |
+| Tor Browser | Manual | Checkbox or task, never a denial | Not tested yet |
+| Brave with shields up | Manual | Pass or checkbox | Not tested yet |
+| Safari on iOS | Manual | Pass | Not tested yet |
+| Anti-fingerprinting extensions (JShelter, CanvasBlocker) | Manual | Pass or checkbox | Not tested yet |
+| Keyboard only | Manual | Pass, or checkbox by keyboard | Not tested yet |
+| Screen reader (NVDA, VoiceOver) | Manual | Pass, or the wait path | Not tested yet |
+| Older or niche browsers (Pale Moon, 32-bit builds) | Manual | Pass or checkbox | Not tested yet |
+
+Visitors who get stuck see a Help link in the widget's error states. It leads to `/v1/help`, which gives practical steps in English or German, without describing what the detection looks at.
 
 ## Testing with people
 

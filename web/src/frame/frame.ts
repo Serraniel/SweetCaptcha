@@ -57,17 +57,36 @@ function badge(state: 'busy' | 'ok' | 'bad', message: string, action?: { label: 
   else icon.append(el('div', state === 'ok' ? 'mark' : 'mark bad', state === 'ok' ? '✓' : '!'));
   const text = el('div', 'text');
   text.append(statusLine(message));
-  if (action) {
-    const b = el('button', 'link', action.label);
-    b.type = 'button';
-    b.addEventListener('click', action.run);
-    text.append(b);
-  } else if (link) {
-    const a = el('a', '', link.label);
-    a.href = link.href;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    text.append(a);
+  if (action || link) {
+    const row = el('div', 'links');
+    if (action) {
+      const b = el('button', 'link', action.label);
+      b.type = 'button';
+      b.addEventListener('click', action.run);
+      row.append(b);
+    }
+    if (link) {
+      const a = el('a', '', link.label);
+      a.href = link.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      row.append(a);
+    }
+    // Errors always offer the help page, which gives advice for blocked visitors.
+    if (state === 'bad') {
+      const help = el('a', '', t.help);
+      help.href = `/v1/help?k=${encodeURIComponent(siteKey)}&l=${encodeURIComponent(document.documentElement.lang)}`;
+      help.target = '_blank';
+      help.rel = 'noopener';
+      row.append(help);
+    }
+    text.append(row);
+  } else if (state === 'bad') {
+    const help = el('a', '', t.help);
+    help.href = `/v1/help?k=${encodeURIComponent(siteKey)}&l=${encodeURIComponent(document.documentElement.lang)}`;
+    help.target = '_blank';
+    help.rel = 'noopener';
+    text.append(help);
   } else {
     text.append(brandLine());
   }

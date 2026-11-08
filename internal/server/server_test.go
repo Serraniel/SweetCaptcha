@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -514,5 +515,31 @@ func TestInvalidTokensAreNotThrottled(t *testing.T) {
 	token := strictToken(t, ts, "")
 	if m := verifyForm(t, ts.URL+"/siteverify", url.Values{"secret": {strictPass}, "response": {token}}); m["success"] != true {
 		t.Errorf("a site relaying bad tokens was locked out: %v", m)
+	}
+}
+
+func TestHelpPage(t *testing.T) {
+	_, ts := newTest(t, strictSite)
+	get := func(q string, lang string) string {
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/v1/help?"+q, nil)
+		if lang != "" {
+			req.Header.Set("Accept-Language", lang)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		raw, _ := io.ReadAll(resp.Body)
+		return string(raw)
+	}
+	if body := get("k="+strictKey, "de-DE"); !strings.Contains(body, "Hilfe zur Überprüfung") {
+		t.Error("German help not served")
+	}
+	if body := get("k="+strictKey, "ja"); !strings.Contains(body, "Verification help") {
+		t.Error("untranslated language should fall back to English")
+	}
+	if body := get("k=%3Cscript%3E&l=%3Cscript%3E", ""); strings.Contains(body, "<script>") {
+		t.Error("unescaped input on the help page")
 	}
 }
