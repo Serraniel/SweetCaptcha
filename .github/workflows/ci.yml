@@ -108,7 +108,10 @@ jobs:
           scripts/init-env.sh
           docker compose config -q
           docker compose -f compose.strict.yaml config -q
+      # A report, not a test: an outage of the Syft download must not block merges.
+      # The release workflow generates SBOMs strictly.
       - name: Generate SBOM
+        continue-on-error: true
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           image: sweetcaptcha:ci
