@@ -46,9 +46,7 @@
   ],
   "packages": {
     ".": {
-      "prerelease": true,
-      "versioning": "prerelease",
-      "prerelease-type": "beta"
+      "prerelease": true
     }
   }
 }
