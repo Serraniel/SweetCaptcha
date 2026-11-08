@@ -78,7 +78,7 @@ Keep per-action limits and abuse controls behind any form this protects.
 
 ## Measured results
 
-From the [lab](docs/LAB_RESULTS.md), which runs real Chromium and the real binary. It covers one browser on one machine and is a regression suite, not an efficacy study.
+From the [lab](docs/LAB_RESULTS.md) and the [adversarial lab](docs/ADVERSARIAL_RESULTS.md), which run real Chromium and the real binary. It covers one browser on one machine and is a regression suite, not an efficacy study.
 
 | Attacker | Outcome |
 |---|---|
@@ -90,6 +90,8 @@ From the [lab](docs/LAB_RESULTS.md), which runs real Chromium and the real binar
 | Agent that waits, then clicks the checkbox | Puzzle |
 | Humanised pointer and typing | **Passes** |
 | Fully forged signal document | **Passes**; the checkbox step under native TLS, whose click data can also be forged |
+| Patchright or rebrowser-playwright with humanised input | **Passes** |
+| puppeteer-extra stealth with humanised input | Puzzle |
 
 ## Privacy
 
@@ -105,7 +107,7 @@ Everything is processed on your server. Signals are reduced in the browser where
 - [Compatibility](docs/COMPATIBILITY.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Signal register](docs/SIGNALS.md)
-- [Lab results](docs/LAB_RESULTS.md)
+- [Lab results](docs/LAB_RESULTS.md) and [adversarial results](docs/ADVERSARIAL_RESULTS.md)
 - [Research report](docs/research/report.md) and [notes](docs/research/notes)
 
 ## License
