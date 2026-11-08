@@ -3,11 +3,21 @@ package config
 import (
 	"strings"
 	"testing"
+
+	"github.com/Serraniel/SweetCaptcha/internal/edition"
 )
 
 func TestRulesValidate(t *testing.T) {
 	ok := "    rules:\n      - name: scraper\n        match: {user_agent: \"(?i)scrapy\"}\n        force: deny\n      - name: office\n        match: {action: login, header: {name: X-Office, present: true}}\n        adjust: -1.5\n"
-	if _, err := Parse([]byte(doc(ok))); err != nil {
+	_, err := Parse([]byte(doc(ok)))
+	if edition.StrictOnly {
+		// Every site is strict in this build, and strict sites have no scoring.
+		if err == nil {
+			t.Fatal("rules accepted in the strict-only build")
+		}
+		return
+	}
+	if err != nil {
 		t.Fatalf("valid rules rejected: %v", err)
 	}
 	for name, rules := range map[string]string{
