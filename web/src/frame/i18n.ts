@@ -36,6 +36,7 @@ export interface Strings {
   motionNote: string;
   stackOrder: string;
   stackFront: string;
+  help: string;
 }
 
 export const locales: Record<string, Strings> = {
@@ -69,6 +70,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'This task uses motion. If motion makes you unwell, choose “I can\'t do this task”.',
     stackOrder: 'Which shape lies at the very back, underneath all the others?',
     stackFront: 'Which shape lies at the very front, on top of all the others?',
+    help: 'Help',
   },
   de: {
     verifying: 'Überprüfung läuft',
@@ -100,6 +102,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Diese Aufgabe nutzt Bewegung. Wenn dir Bewegung nicht bekommt, wähle „Ich kann diese Aufgabe nicht lösen“.',
     stackOrder: 'Welche Form liegt ganz hinten, unter allen anderen?',
     stackFront: 'Welche Form liegt ganz vorne, über allen anderen?',
+    help: 'Hilfe',
   },
   fr: {
     verifying: 'Vérification en cours',
@@ -131,6 +134,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Cette tâche utilise du mouvement. Si le mouvement vous incommode, choisissez « Je ne peux pas faire cette tâche ».',
     stackOrder: 'Quelle forme se trouve tout au fond, sous toutes les autres ?',
     stackFront: 'Quelle forme se trouve tout devant, au-dessus de toutes les autres ?',
+    help: 'Aide',
   },
   es: {
     verifying: 'Verificando',
@@ -162,6 +166,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Esta tarea usa movimiento. Si el movimiento te sienta mal, elige «No puedo hacer esta tarea».',
     stackOrder: '¿Qué forma está al fondo del todo, debajo de las demás?',
     stackFront: '¿Qué forma está delante del todo, encima de las demás?',
+    help: 'Ayuda',
   },
   pt: {
     verifying: 'Verificando',
@@ -193,6 +198,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Esta tarefa usa movimento. Se o movimento lhe faz mal, escolha “Não consigo fazer esta tarefa”.',
     stackOrder: 'Qual forma está bem no fundo, por baixo de todas as outras?',
     stackFront: 'Qual forma está bem na frente, por cima de todas as outras?',
+    help: 'Ajuda',
   },
   it: {
     verifying: 'Verifica in corso',
@@ -224,6 +230,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Questo compito usa il movimento. Se il movimento ti dà fastidio, scegli «Non riesco a svolgere questo compito».',
     stackOrder: 'Quale forma si trova più in fondo, sotto tutte le altre?',
     stackFront: 'Quale forma si trova più in alto, sopra tutte le altre?',
+    help: 'Aiuto',
   },
   nl: {
     verifying: 'Bezig met verifiëren',
@@ -255,6 +262,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Deze taak gebruikt beweging. Als beweging je onwel maakt, kies dan ‘Ik kan deze taak niet doen’.',
     stackOrder: 'Welke vorm ligt helemaal achteraan, onder alle andere?',
     stackFront: 'Welke vorm ligt helemaal vooraan, boven alle andere?',
+    help: 'Hulp',
   },
   pl: {
     verifying: 'Trwa weryfikacja',
@@ -286,6 +294,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'To zadanie wykorzystuje ruch. Jeśli ruch źle na ciebie działa, wybierz „Nie mogę wykonać tego zadania”.',
     stackOrder: 'Który kształt leży na samym spodzie, pod wszystkimi innymi?',
     stackFront: 'Który kształt leży na samym wierzchu, nad wszystkimi innymi?',
+    help: 'Pomoc',
   },
   cs: {
     verifying: 'Probíhá ověření',
@@ -317,6 +326,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Tento úkol využívá pohyb. Pokud vám pohyb nedělá dobře, zvolte „Tento úkol nezvládnu“.',
     stackOrder: 'Který tvar leží úplně vzadu, pod všemi ostatními?',
     stackFront: 'Který tvar leží úplně vpředu, nad všemi ostatními?',
+    help: 'Nápověda',
   },
   sv: {
     verifying: 'Verifierar',
@@ -348,6 +358,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Den här uppgiften använder rörelse. Om rörelse får dig att må dåligt, välj ”Jag kan inte göra den här uppgiften”.',
     stackOrder: 'Vilken form ligger längst bak, under alla andra?',
     stackFront: 'Vilken form ligger längst fram, ovanpå alla andra?',
+    help: 'Hjälp',
   },
   ru: {
     verifying: 'Идёт проверка',
@@ -379,6 +390,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'В этом задании есть движение. Если движение вызывает у вас дискомфорт, выберите «Я не могу выполнить это задание».',
     stackOrder: 'Какая фигура лежит в самом низу, под всеми остальными?',
     stackFront: 'Какая фигура лежит на самом верху, поверх всех остальных?',
+    help: 'Справка',
   },
   uk: {
     verifying: 'Триває перевірка',
@@ -410,6 +422,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'У цьому завданні є рух. Якщо рух викликає у вас дискомфорт, виберіть «Я не можу виконати це завдання».',
     stackOrder: 'Яка фігура лежить у самому низу, під усіма іншими?',
     stackFront: 'Яка фігура лежить на самому верху, поверх усіх інших?',
+    help: 'Довідка',
   },
   tr: {
     verifying: 'Doğrulanıyor',
@@ -441,6 +454,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Bu görev hareket içerir. Hareket sizi rahatsız ediyorsa “Bu görevi yapamıyorum” seçeneğini seçin.',
     stackOrder: 'Hangi şekil en altta, diğerlerinin hepsinin altında?',
     stackFront: 'Hangi şekil en üstte, diğerlerinin hepsinin üzerinde?',
+    help: 'Yardım',
   },
   ar: {
     verifying: 'جارٍ التحقق',
@@ -472,6 +486,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'تستخدم هذه المهمة الحركة. إذا كانت الحركة تزعجك، فاختر «لا أستطيع أداء هذه المهمة».',
     stackOrder: 'أي شكل يقع في الخلف تماماً، تحت جميع الأشكال الأخرى؟',
     stackFront: 'أي شكل يقع في المقدمة تماماً، فوق جميع الأشكال الأخرى؟',
+    help: 'مساعدة',
   },
   hi: {
     verifying: 'सत्यापन हो रहा है',
@@ -503,6 +518,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'इस काम में हलचल है। अगर हलचल से आपको परेशानी होती है, तो “मैं यह काम नहीं कर सकता” चुनें।',
     stackOrder: 'कौन-सा आकार सबसे पीछे है, बाकी सभी के नीचे?',
     stackFront: 'कौन-सा आकार सबसे आगे है, बाकी सभी के ऊपर?',
+    help: 'सहायता',
   },
   id: {
     verifying: 'Sedang memverifikasi',
@@ -534,6 +550,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Tugas ini menggunakan gerakan. Jika gerakan membuat Anda tidak nyaman, pilih “Saya tidak bisa mengerjakan tugas ini”.',
     stackOrder: 'Bentuk mana yang paling belakang, di bawah semua bentuk lain?',
     stackFront: 'Bentuk mana yang paling depan, di atas semua bentuk lain?',
+    help: 'Bantuan',
   },
   vi: {
     verifying: 'Đang xác minh',
@@ -565,6 +582,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'Nhiệm vụ này có chuyển động. Nếu chuyển động khiến bạn khó chịu, hãy chọn “Tôi không làm được nhiệm vụ này”.',
     stackOrder: 'Hình nào nằm ở dưới cùng, bên dưới tất cả các hình khác?',
     stackFront: 'Hình nào nằm trên cùng, phía trên tất cả các hình khác?',
+    help: 'Trợ giúp',
   },
   zh: {
     verifying: '正在验证',
@@ -596,6 +614,7 @@ export const locales: Record<string, Strings> = {
     motionNote: '此任务包含动画。如果动画让您不适，请选择“我无法完成此任务”。',
     stackOrder: '哪个图形在最底层，压在所有其他图形下面？',
     stackFront: '哪个图形在最上层，压在所有其他图形上面？',
+    help: '帮助',
   },
   'zh-TW': {
     verifying: '正在驗證',
@@ -627,6 +646,7 @@ export const locales: Record<string, Strings> = {
     motionNote: '此任務包含動畫。如果動畫讓您不適，請選擇「我無法完成此任務」。',
     stackOrder: '哪個圖形在最底層，壓在所有其他圖形下面？',
     stackFront: '哪個圖形在最上層，壓在所有其他圖形上面？',
+    help: '說明',
   },
   ja: {
     verifying: '確認しています',
@@ -658,6 +678,7 @@ export const locales: Record<string, Strings> = {
     motionNote: 'この課題には動きがあります。動きで気分が悪くなる場合は「この課題ができません」を選んでください。',
     stackOrder: '一番下（ほかのすべての図形の下）にある図形はどれですか？',
     stackFront: '一番上（ほかのすべての図形の上）にある図形はどれですか？',
+    help: 'ヘルプ',
   },
   ko: {
     verifying: '확인하는 중',
@@ -689,6 +710,7 @@ export const locales: Record<string, Strings> = {
     motionNote: '이 과제에는 움직임이 있습니다. 움직임 때문에 불편하면 ‘이 과제를 할 수 없습니다’를 선택하세요.',
     stackOrder: '다른 모든 도형 아래, 맨 뒤에 있는 도형은 무엇인가요?',
     stackFront: '다른 모든 도형 위, 맨 앞에 있는 도형은 무엇인가요?',
+    help: '도움말',
   },
 };
 

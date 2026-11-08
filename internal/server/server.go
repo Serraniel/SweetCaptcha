@@ -92,6 +92,7 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /v1/frame", s.handleFrame)
 	mux.HandleFunc("GET /v1/assets/{name}", s.handleAsset)
 	mux.HandleFunc("GET /v1/transparency", s.handleTransparency)
+	mux.HandleFunc("GET /v1/help", s.handleHelp)
 
 	// The same loader serves every provider path. It inspects its own URL to
 	// decide which global to expose.
