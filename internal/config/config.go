@@ -9,6 +9,7 @@ import (
 	"net/netip"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -354,7 +355,12 @@ func (s *Site) finish() error {
 		s.Limits.WaitPerHour = 5
 	}
 	if len(s.Puzzles) == 0 {
-		s.Puzzles = []string{"line-trace", "gap-rings", "rotate-match"}
+		s.Puzzles = []string{"line-trace", "gap-rings", "kinetic", "stack-order"}
+	}
+	for _, p := range s.Puzzles {
+		if !slices.Contains([]string{"line-trace", "gap-rings", "rotate-match", "kinetic", "stack-order"}, p) {
+			return fmt.Errorf("unknown puzzle family %q", p)
+		}
 	}
 	return nil
 }

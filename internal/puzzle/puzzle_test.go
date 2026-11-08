@@ -4,6 +4,7 @@ package puzzle
 
 import (
 	"math/rand/v2"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -99,6 +100,61 @@ func TestLineLayoutsAreReadable(t *testing.T) {
 func BenchmarkLineTrace(b *testing.B) {
 	for b.Loop() {
 		if _, _, err := Generate(LineTrace); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestStackLayoutsHaveOneVisibleAnswer(t *testing.T) {
+	r := rand.New(rand.NewPCG(3, 4))
+	valid := 0
+	for range 40 {
+		_, masks := stackLayout(r)
+		if stackValid(masks) {
+			valid++
+		}
+	}
+	if valid == 0 {
+		t.Fatal("no valid stack layout in 40 tries; the generator would fall back to an unchecked one")
+	}
+	// The acceptance rate must leave a wide margin within stackAttempts.
+	if rate := float64(valid) / 40; rate < 0.05 {
+		t.Errorf("acceptance rate %.2f is too low", rate)
+	}
+}
+
+func TestKineticFramesHideTheShape(t *testing.T) {
+	pub, ans, err := Generate(Kinetic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pub.Frames != kineticFrames || pub.FrameSize != kineticCell*kineticGrid || len(ans.Values) < 2 {
+		t.Fatalf("unexpected shape: %+v %v", pub.Family, ans.Values)
+	}
+	if n := len(pub.Images[0]); n > 160_000 {
+		t.Errorf("sprite sheet too large: %d bytes", n)
+	}
+}
+
+func TestDefaultFamiliesExist(t *testing.T) {
+	for _, f := range DefaultFamilies {
+		if !slices.Contains(Families, f) {
+			t.Errorf("default family %s is not implemented", f)
+		}
+	}
+}
+
+func BenchmarkKinetic(b *testing.B) {
+	for b.Loop() {
+		if _, _, err := Generate(Kinetic); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkStackOrder(b *testing.B) {
+	for b.Loop() {
+		if _, _, err := Generate(StackOrder); err != nil {
 			b.Fatal(err)
 		}
 	}
