@@ -11,8 +11,6 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org). Rele
 
 Releases below 1.0 are betas. Versions follow semantic versioning as 0.y.z: a feature bumps the minor version, a fix the patch, and a breaking change also bumps the minor version while below 1.0. The release workflow marks every 0.x release as a pre-release on GitHub, and its images get the `beta` tag. `latest` only moves from 1.0 on.
 
-`release-please-config.json` pins `release-as: 0.1.1` once, because release-please otherwise keeps the `-beta` suffix of 0.1.0-beta.1. Remove the pin right after 0.1.1 is released.
-
 ## Local checks
 
 ```sh
