@@ -14,9 +14,12 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 |---|---|---|
 | `mode` | `standard` | Or `strict`. |
 | `token_ttl` | `5m` | 30 s to 30 min. Keep it short, since single-use tokens are what charge per action. |
-| `pow.base` | sha256, 15 bits, 10 puzzles | Raising it hits the slowest phones first. Solve times on phones have not been measured for these defaults. |
-| `pow.step_up` | sha256, 18 bits, 16 puzzles | Runs while the checkbox is shown. `scrypt` is available and narrows the GPU advantage. Start with low bits, because each attempt is far slower. |
-| `pow.wait` | sha256, 21 bits, 24 puzzles | An estimated 10 s on a desktop to a few minutes on a slow phone, not measured. |
+| `pow.base` | sha256, 14 bits × 48 | About 0.8M hashes. See [proof-of-work balancing](#proof-of-work-balancing). |
+| `pow.step_up` | sha256, 16 bits × 48 | About 3.1M hashes. Runs while the checkbox is shown. `scrypt` narrows the GPU advantage; start with low bits, because each attempt is far slower. |
+| `pow.wait` | sha256, 18 bits × 48 | About 12.6M hashes. |
+| `pow.wait_min_duration` | `8s` | The wait path can't finish sooner, whatever the device. This costs every client the same wall time instead of punishing slow phones. |
+| `pow.growth` | `1` | How fast difficulty rises under load: 0.5 slow, 1 medium, 1.5 fast, 0 off. |
+| `limits.site_baseline_per_minute` | `0` (off) | Your site's normal challenges per minute. Above it, difficulty rises for everyone. |
 | `policy.shadow` | `false` | Records decisions without enforcing them. |
 | `policy.on_definitive` | `deny` | Or `puzzle`. |
 | `policy.score_only` | `false` | Never show a checkbox or task, like reCAPTCHA v3: every request gets a token, and the site must reject low scores itself. Use it only where the backend checks `score`, or a bot gets a valid token. |
@@ -25,6 +28,29 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `wait_fallback` | `true` | Lets coherent browsers leave a puzzle for a long calculation. Never offered to clients with contradictions or automation markers. If you turn it off, people who can't do visual tasks need another route, such as `support_url`. |
 | `support_url` | none | Shown on a deny and beside puzzles. |
 | `test_mode` | none | `pass` or `fail` for integrator tests. Never use it in production. |
+
+## Proof-of-work balancing
+
+Proof of work adds friction and shapes request rates. It does not stop a funded attacker: a native solver runs about 11 times faster than browser JavaScript, and a GPU thousands of times faster, so 1,000 base solves cost an attacker a fraction of a cent. The defaults therefore keep the base level light for people, and put the work on risky or high-volume clients. The [research notes](research/notes/pow_balancing.md) compare peer products and the economics.
+
+The widget solves in 4 workers in parallel. A fixed count avoids reading the device's core count, which strict mode must not do.
+
+| Level | Desktop (measured) | Median phone (estimate) | Low-end phone (estimate) |
+|---|---|---|---|
+| Base | 0.27 s median time to token, including page load | about 1 s | up to about 3 s |
+| Checkbox step | about 0.8 s | about 3 s | up to about 10 s |
+| Wait path | at least `wait_min_duration` (8 s) | at least 8 s, about 10 s | up to about 30 s |
+
+The desktop figure comes from the lab on one 8-core machine. The phone figures are estimates scaled from published measurements of other products and have not been measured. Test on your own slow devices before raising anything.
+
+**Adaptive difficulty.** Work grows on a log scale with load, capped at 16 times the configured level:
+
+```
+boost = min(4, growth × [log2(1 + excess / 8) + log2(1 + (site rate − baseline) / (4 × baseline))])
+work  = configured work × 2^boost
+```
+
+`excess` is how many challenges this address requested above `soft_per_minute` in the current minute. The site term applies only when `site_baseline_per_minute` is set. With the defaults, an address 8 over its allowance does twice the work, and one 120 over does 16 times. Requests above `hard_per_minute` get HTTP 429.
 
 ## Roll out in shadow mode
 

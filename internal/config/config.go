@@ -93,6 +93,19 @@ type PoW struct {
 	StepUp PoWLevel `yaml:"step_up"`
 	// Wait is the heavy puzzle offered as the no-cognitive-task alternative.
 	Wait PoWLevel `yaml:"wait"`
+	// WaitMinDuration is enforced by the server on the wait path, so that it costs
+	// every device the same wall time instead of punishing slow phones.
+	WaitMinDuration time.Duration `yaml:"wait_min_duration"`
+	// Growth scales adaptive difficulty: 0.5 slow, 1 medium, 1.5 fast. 0 turns it off.
+	Growth *float64 `yaml:"growth"`
+}
+
+// GrowthFactor returns the adaptive difficulty factor, defaulting to 1.
+func (p PoW) GrowthFactor() float64 {
+	if p.Growth == nil {
+		return 1
+	}
+	return *p.Growth
 }
 
 // Policy sets score bands. All are probabilities that the client is automated.
@@ -116,6 +129,9 @@ type Policy struct {
 type Limits struct {
 	SoftPerMinute int64 `yaml:"soft_per_minute"`
 	HardPerMinute int64 `yaml:"hard_per_minute"`
+	// SiteBaselinePerMinute is the site's normal challenge rate. Above it, difficulty
+	// rises for everyone. 0 turns the site-wide part of adaptive difficulty off.
+	SiteBaselinePerMinute int64 `yaml:"site_baseline_per_minute"`
 	// WaitPerHour limits uses of the wait path per pseudonymised address.
 	WaitPerHour int64 `yaml:"wait_per_hour"`
 }
@@ -291,9 +307,20 @@ func (s *Site) finish() error {
 	if s.TokenTTL < 30*time.Second || s.TokenTTL > 30*time.Minute {
 		return errors.New("token_ttl must be between 30s and 30m")
 	}
-	s.PoW.Base = withDefault(s.PoW.Base, PoWLevel{pow.SHA256, 15, 10})
-	s.PoW.StepUp = withDefault(s.PoW.StepUp, PoWLevel{pow.SHA256, 18, 16})
-	s.PoW.Wait = withDefault(s.PoW.Wait, PoWLevel{pow.SHA256, 21, 24})
+	// Defaults target about 0.2 s / 0.8 s / 3 s on a desktop with the 4-worker
+	// solver, and about 3-4 times that on a median phone. See docs/OPERATIONS.md.
+	s.PoW.Base = withDefault(s.PoW.Base, PoWLevel{pow.SHA256, 14, 48})
+	s.PoW.StepUp = withDefault(s.PoW.StepUp, PoWLevel{pow.SHA256, 16, 48})
+	s.PoW.Wait = withDefault(s.PoW.Wait, PoWLevel{pow.SHA256, 18, 48})
+	if s.PoW.WaitMinDuration == 0 {
+		s.PoW.WaitMinDuration = 8 * time.Second
+	}
+	if s.PoW.WaitMinDuration < 0 || s.PoW.WaitMinDuration > 5*time.Minute {
+		return errors.New("pow.wait_min_duration must be between 0 and 5m")
+	}
+	if g := s.PoW.GrowthFactor(); g < 0 || g > 3 {
+		return errors.New("pow.growth must be between 0 and 3")
+	}
 	for _, l := range []PoWLevel{s.PoW.Base, s.PoW.StepUp, s.PoW.Wait} {
 		if _, err := pow.New(l.Algo, l.Bits, l.Count); err != nil {
 			return fmt.Errorf("pow: %w", err)

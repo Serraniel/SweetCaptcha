@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Serraniel/SweetCaptcha/internal/puzzle"
 	"github.com/Serraniel/SweetCaptcha/internal/risk"
@@ -26,6 +27,7 @@ const stdSite = `
       base: {algo: sha256, bits: 4, count: 2}
       step_up: {algo: scrypt, bits: 1, count: 1}
       wait: {algo: sha256, bits: 5, count: 2}
+      wait_min_duration: 1ms
 `
 
 var browserHeaders = []string{"User-Agent", stdUA, "Accept-Language", "en", "Sec-Fetch-Site", "same-origin"}
@@ -54,6 +56,7 @@ const softSite = `
     pow:
       base: {algo: sha256, bits: 4, count: 2}
       wait: {algo: sha256, bits: 5, count: 2}
+      wait_min_duration: 1ms
 `
 
 func softPuzzle(t *testing.T, ts *httptest.Server) map[string]any {
@@ -82,8 +85,13 @@ func submit(t *testing.T, ts *httptest.Server, ch map[string]any, signals any, h
 	if signals != nil {
 		body["signals"] = signals
 	}
-	_, r := postJSON(t, ts.URL+"/v1/submit", body, headers...)
-	return r
+	for {
+		_, r := postJSON(t, ts.URL+"/v1/submit", body, headers...)
+		if r["status"] != "hold" || r["retry"].(float64) > 1000 {
+			return r
+		}
+		time.Sleep(time.Duration(r["retry"].(float64)) * time.Millisecond)
+	}
 }
 
 func TestCoherentBrowserPassesSilently(t *testing.T) {
@@ -413,5 +421,21 @@ func TestScoreOnlyNeverAsksForInteraction(t *testing.T) {
 	m := verifyForm(t, ts.URL+"/recaptcha/api/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
 	if m["success"] != true || m["score"].(float64) > 0.2 {
 		t.Errorf("score-only token must carry the low score: %v", m)
+	}
+}
+
+func TestWaitPathHoldsUntilMinimumDuration(t *testing.T) {
+	s, ts := newTest(t, strings.ReplaceAll(softSite, "wait_min_duration: 1ms", "wait_min_duration: 4m"))
+	r := softPuzzle(t, ts)
+	_, w := postJSON(t, ts.URL+"/v1/wait", map[string]any{"p": r["p"]})
+	held := submit(t, ts, w, nil, browserHeaders...)
+	if held["status"] != "hold" || held["retry"].(float64) < 1000 {
+		t.Fatalf("expected a hold: %v", held)
+	}
+	// After the minimum duration, the same challenge, still unconsumed, passes.
+	s.now = func() time.Time { return time.Now().Add(5 * time.Minute) }
+	_, done := postJSON(t, ts.URL+"/v1/submit", map[string]any{"c": w["c"], "nonces": solvePow(t, w["pow"].(map[string]any))}, browserHeaders...)
+	if done["status"] != "pass" {
+		t.Fatalf("after the hold: %v", done)
 	}
 }

@@ -333,25 +333,33 @@ func TestTokenFromAnotherSiteRejected(t *testing.T) {
 	}
 }
 
-func TestRateLimit(t *testing.T) {
+func TestRateLimitAndAdaptiveDifficulty(t *testing.T) {
 	_, ts := newTest(t, `
   - name: limited
     sitekey: sitekey_limited
     secret: secret_limited_secret
     mode: strict
     hostnames: [example.com]
-    limits: {soft_per_minute: 1, hard_per_minute: 2}
-    pow: {base: {algo: sha256, bits: 4, count: 1}}
+    limits: {soft_per_minute: 1, hard_per_minute: 20}
+    pow: {base: {algo: sha256, bits: 4, count: 8}}
 `)
 	body := map[string]string{"sitekey": "sitekey_limited", "hostname": "example.com"}
+	work := func(m map[string]any) float64 {
+		p := m["pow"].(map[string]any)
+		return p["count"].(float64) * float64(uint64(1)<<uint(p["bits"].(float64)))
+	}
 	_, first := postJSON(t, ts.URL+"/v1/challenge", body)
-	_, second := postJSON(t, ts.URL+"/v1/challenge", body)
-	if first["pow"].(map[string]any)["bits"] != 4.0 || second["pow"].(map[string]any)["bits"] != 6.0 {
-		t.Errorf("difficulty did not rise: %v %v", first["pow"], second["pow"])
+	var last map[string]any
+	for range 18 {
+		_, last = postJSON(t, ts.URL+"/v1/challenge", body)
+	}
+	if ratio := work(last) / work(first); ratio < 3 || ratio > 16.5 {
+		t.Errorf("work should rise on a log scale and stay capped: ratio %.2f", ratio)
 	}
 	resp, _ := postJSON(t, ts.URL+"/v1/challenge", body)
-	if resp.StatusCode != http.StatusTooManyRequests {
-		t.Errorf("status %d", resp.StatusCode)
+	resp2, _ := postJSON(t, ts.URL+"/v1/challenge", body)
+	if resp.StatusCode != http.StatusOK || resp2.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("hard limit: %d then %d", resp.StatusCode, resp2.StatusCode)
 	}
 }
 
