@@ -490,3 +490,44 @@ func TestBindClientRejectsOtherNetworks(t *testing.T) {
 		t.Errorf("IP family switch rejected: %v", got)
 	}
 }
+
+func TestCustomRules(t *testing.T) {
+	site := strings.ReplaceAll(stdSite, "wait_fallback: true", `rules:
+      - name: block-scrapy
+        match: {user_agent: "(?i)scrapy"}
+        force: deny
+      - name: trusted-office
+        match: {header: {name: X-Office, present: true}}
+        force: pass
+      - name: careful-login
+        match: {action: login}
+        adjust: 4`)
+	_, ts := newTest(t, site)
+	run := func(action string, extra ...string) map[string]any {
+		_, ch := postJSON(t, ts.URL+"/v1/challenge", map[string]string{"sitekey": "sitekey_std", "hostname": "example.com", "action": action}, browserHeaders...)
+		nonce := ch["collect"].(map[string]any)["nonce"].(string)
+		headers := append(append([]string{}, browserHeaders...), extra...)
+		ua := stdUA
+		for i := 0; i+1 < len(headers); i += 2 {
+			if headers[i] == "User-Agent" {
+				ua = headers[i+1]
+			}
+		}
+		sig := goodSignals(nonce)
+		sig["hash"].(map[string]string)["ua"] = risk.KeyedHash(nonce, ua)
+		return submit(t, ts, ch, sig, headers...)
+	}
+	if r := run("", "User-Agent", stdUA+" Scrapy/2.11"); r["status"] != "deny" {
+		t.Errorf("force deny: %v", r)
+	}
+	// A heavy adjustment moves a clean visitor out of the silent pass.
+	if r := run("login"); r["status"] != "interact" && r["status"] != "puzzle" {
+		t.Errorf("adjust on action: %v", r["status"])
+	}
+	if r := run("login", "X-Office", "1"); r["status"] != "pass" {
+		t.Errorf("force pass: %v", r["status"])
+	}
+	if r := run("signup"); r["status"] != "pass" {
+		t.Errorf("no rule should apply: %v", r["status"])
+	}
+}

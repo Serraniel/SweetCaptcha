@@ -118,6 +118,7 @@ func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, sit
 	}
 	in := d.buildInput(r, s, site, c, req.Signals)
 	res := risk.Evaluate(in)
+	forced := applyRules(site, ruleFacts{header: r.Header, datacenter: in.Datacenter, tor: in.Tor, action: c.Action, hostname: c.Host}, &res)
 	ev := evidence{LogOdds: res.LogOdds, Hits: res.Hits, Definitive: res.Definitive, Hard: res.Hard}
 	for _, h := range res.Hits {
 		s.stats.Add(ctx, site.Name, "rule_"+h)
@@ -126,6 +127,9 @@ func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, sit
 		s.stats.Add(ctx, site.Name, stats.HistName(risk.P(res.LogOdds)))
 	}
 	decision := decide(site, res)
+	if forced != "" {
+		decision = forced
+	}
 	if site.Policy.Shadow {
 		if decision != "pass" {
 			s.stats.Add(ctx, site.Name, stats.ShadowDiff)
@@ -475,10 +479,15 @@ func (d *standard) register() ([]string, any) {
 	return risk.ClientReads, out
 }
 
-func (d *standard) counterNames() []string {
-	names := make([]string, len(risk.Rules))
-	for i, r := range risk.Rules {
-		names[i] = "rule_" + r.ID
+func (d *standard) counterNames(cfg *config.Config) []string {
+	names := make([]string, 0, len(risk.Rules))
+	for _, r := range risk.Rules {
+		names = append(names, "rule_"+r.ID)
+	}
+	for _, site := range cfg.Sites {
+		for _, r := range site.Rules {
+			names = append(names, "rule_rule_custom:"+r.Name)
+		}
 	}
 	return names
 }

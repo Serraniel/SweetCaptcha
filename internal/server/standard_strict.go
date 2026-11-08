@@ -25,6 +25,6 @@ func (*standard) register() ([]string, any) { return []string{}, []any{} }
 
 func (*standard) start(context.Context) {}
 
-func (*standard) counterNames() []string { return nil }
+func (*standard) counterNames(*config.Config) []string { return nil }
 
 func (*standard) wrapListener(srv *http.Server, _ *config.Config) {}

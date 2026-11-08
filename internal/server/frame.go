@@ -135,6 +135,7 @@ type transparency struct {
 	StrictBuild bool     `json:"strict_only_build"`
 	ClientReads []string `json:"client_reads"`
 	Rules       any      `json:"rules"`
+	CustomRules any      `json:"custom_rules"`
 	Storage     []string `json:"browser_storage"`
 	ThirdParty  []string `json:"third_party_requests"`
 	Retention   any      `json:"server_retention"`
@@ -149,7 +150,7 @@ func (s *Server) handleTransparency(w http.ResponseWriter, r *http.Request) {
 	}
 	t := transparency{
 		SiteKey: site.SiteKey, Mode: string(site.Mode), StrictBuild: edition.StrictOnly,
-		ClientReads: []string{}, Storage: []string{}, ThirdParty: []string{}, Rules: []any{},
+		ClientReads: []string{}, Storage: []string{}, ThirdParty: []string{}, Rules: []any{}, CustomRules: []any{},
 		Retention: map[string]string{ //nolint:gosec // These are descriptions, not credentials.
 			"challenge_state":    "until expiry, at most 11 minutes",
 			"token_redemption":   "until token expiry plus 1 minute",
@@ -164,6 +165,7 @@ func (s *Server) handleTransparency(w http.ResponseWriter, r *http.Request) {
 		t.Statement = "Proof of work only. This mode raises the cost of automated requests; it does not detect sophisticated bots or distinguish humans. The returned score is a fixed value and carries no information about humanity."
 	} else {
 		t.ClientReads, t.Rules = s.std.register()
+		t.CustomRules = site.Rules
 		t.Statement = "Device, network and interaction signals are evaluated on this server only. Signals are not shared with third parties, not stored after evaluation, and not used for any other purpose by the software as shipped."
 	}
 	writeJSON(w, http.StatusOK, t)

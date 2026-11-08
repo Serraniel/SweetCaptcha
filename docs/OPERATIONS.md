@@ -30,6 +30,35 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `support_url` | none | Shown on a deny and beside puzzles. |
 | `test_mode` | none | `pass` or `fail` for integrator tests. Never use it in production. |
 
+## Site rules
+
+Rules adjust scoring for your own traffic without a code change. They run after the built-in engine, in standard mode only. Each match is listed in the reasons as `rule_custom:<name>`, counted on the admin page, and published on `/v1/transparency` with the rest of the configuration. A rule either adjusts the risk by up to ±4 log-odds, with the total for one request also capped at ±4, or forces an outcome: `pass`, `checkbox`, `task` or `deny`. The first matching forced outcome wins.
+
+```yaml
+sites:
+  - name: shop
+    rules:
+      - name: block-old-scraper
+        match: {user_agent: "(?i)scrapy|python-requests"}
+        force: deny
+      - name: careful-login
+        match: {action: login, address: datacenter}
+        adjust: 1.5
+      - name: office-monitor
+        match: {header: {name: X-Health-Check, present: true}, hostname: shop.example.com}
+        force: pass
+```
+
+| Condition | Matches |
+|---|---|
+| `user_agent` | A regular expression against the User-Agent header |
+| `header` | A header being present (`present: true`) or absent |
+| `address` | `datacenter` or `tor`, from the local IP lists |
+| `action` | The exact action name, including the empty name |
+| `hostname` | The exact host the widget ran on |
+
+All conditions in a rule must hold. Forcing `pass` overrides every built-in check, including definitive automation markers, so match such rules narrowly. Headers can be forged, so treat a header match as a convenience, not as authentication.
+
 ## Proof-of-work balancing
 
 Proof of work adds friction and shapes request rates. It does not stop a funded attacker: a native solver runs about 11 times faster than browser JavaScript, and a GPU thousands of times faster, so 1,000 base solves cost an attacker a fraction of a cent. The defaults therefore keep the base level light for people, and put the work on risky or high-volume clients. The [research notes](research/notes/pow_balancing.md) compare peer products and the economics.
