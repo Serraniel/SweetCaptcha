@@ -22,6 +22,7 @@ Verify endpoints accept form-encoded and JSON bodies. reCAPTCHA's also accepts G
 - **Hostname and action are enforced at verify**, from site configuration. A token for an action not on the list fails.
 - **Extension field.** Successful responses on compatibility routes carry a `sweetcaptcha` object with `mode`, `via`, `score` and `reasons`.
 - **Strict mode returns a fixed score of 0.9** so that integrations with thresholds keep working. It carries no information about humanity, and `sweetcaptcha.mode` says `strict`.
+- **reCAPTCHA v3 sites** should set `policy.score_only: true`. Without it, a v3 `execute()` call can show the checkbox or a task, which v3 never does.
 - **`remoteip` is accepted and ignored.**
 
 ## JavaScript APIs

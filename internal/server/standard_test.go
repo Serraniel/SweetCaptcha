@@ -352,8 +352,8 @@ func TestShadowModeIssuesButRecords(t *testing.T) {
 	if m["via"] != "shadow" || m["score"].(float64) > 0.2 {
 		t.Errorf("%v", m)
 	}
-	sum, err := s.stats.Summarise(t.Context(), "std", []string{"shadow_would_challenge"}, 1, 0.02)
-	if err != nil || sum.Counters["shadow_would_challenge"] != 1 {
+	sum, err := s.stats.Summarise(t.Context(), "std", []string{"would_challenge"}, 1, 0.02)
+	if err != nil || sum.Counters["would_challenge"] != 1 {
 		t.Errorf("%+v, %v", sum, err)
 	}
 }
@@ -400,5 +400,18 @@ func TestStandardTransparencyListsReads(t *testing.T) {
 	reads, rules := s.std.register()
 	if len(reads) == 0 || rules == nil {
 		t.Error("register is empty")
+	}
+}
+
+func TestScoreOnlyNeverAsksForInteraction(t *testing.T) {
+	_, ts := newTest(t, strings.ReplaceAll(stdSite, "wait_fallback: true", "policy: {score_only: true}"))
+	ch, _ := stdChallenge(t, ts)
+	r := submit(t, ts, ch, nil, browserHeaders...)
+	if r["status"] != "pass" {
+		t.Fatalf("%v", r)
+	}
+	m := verifyForm(t, ts.URL+"/recaptcha/api/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {r["token"].(string)}})
+	if m["success"] != true || m["score"].(float64) > 0.2 {
+		t.Errorf("score-only token must carry the low score: %v", m)
 	}
 }

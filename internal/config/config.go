@@ -107,6 +107,9 @@ type Policy struct {
 	OnDefinitive string `yaml:"on_definitive"`
 	// Shadow records decisions without enforcing them.
 	Shadow bool `yaml:"shadow"`
+	// ScoreOnly never shows a checkbox or task. Every request gets a token whose
+	// score the site must check, as with reCAPTCHA v3. Only for sites that do check it.
+	ScoreOnly bool `yaml:"score_only"`
 }
 
 // Limits rate-limits challenge issuance per pseudonymised client address.

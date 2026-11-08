@@ -32,7 +32,7 @@ const (
 	PuzzleFail = "puzzle_fail"
 	Wait       = "wait"
 	Deny       = "deny"
-	ShadowDiff = "shadow_would_challenge"
+	ShadowDiff = "would_challenge"
 )
 
 // Base lists counters every edition records.

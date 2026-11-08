@@ -134,6 +134,13 @@ func (d *standard) submit(w http.ResponseWriter, r *http.Request, s *Server, sit
 		s.issue(w, r, site, c, 1-risk.P(res.LogOdds), "shadow", res.Hits)
 		return
 	}
+	if site.Policy.ScoreOnly {
+		if decision != "pass" {
+			s.stats.Add(ctx, site.Name, stats.ShadowDiff)
+		}
+		s.issue(w, r, site, c, 1-risk.P(res.LogOdds), "score", res.Hits)
+		return
+	}
 	switch decision {
 	case "pass":
 		s.issue(w, r, site, c, 1-risk.P(res.LogOdds), "silent", res.Hits)
