@@ -44,9 +44,10 @@ jobs:
             echo "strict build links detection code" >&2
             exit 1
           fi
-      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-        with:
-          version: v2.15.0
+      # Built from the Go module proxy rather than downloaded from GitHub releases,
+      # which keeps lint working through release-download outages and matches local runs.
+      - name: Lint
+        run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run
 
   repository:
     runs-on: ubuntu-latest

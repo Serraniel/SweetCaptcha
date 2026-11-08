@@ -14,6 +14,7 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org). Rele
 ```sh
 (cd web && npm ci && npm run typecheck && npm run build && npm test)
 go vet ./... && go test ./...
+go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run
 go test -tags strictonly ./internal/server ./internal/config
 (cd lab && npm ci && LAB_CHROMIUM=/path/to/chromium npm run lab)
 ```
