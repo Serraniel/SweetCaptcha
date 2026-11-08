@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
+	"net/netip"
 	"strings"
 	"time"
 
@@ -112,6 +113,14 @@ func (s *Server) verify(ctx context.Context, p verifyParams) verifyOutcome {
 	if !site.HostAllowed(t.Host) || !site.ActionAllowed(t.Action) {
 		return verifyOutcome{err: errInvalidResponse}
 	}
+	// With bind_client, a token only redeems for the network that earned it. The
+	// check needs remoteip; without it, sites get the unbound behaviour.
+	if site.Policy.BindClient && t.Net != "" && p.RemoteIP != "" {
+		addr, err := netip.ParseAddr(strings.TrimSpace(p.RemoteIP))
+		if err != nil || s.networkPseudonym(addr.Unmap()) != t.Net {
+			return verifyOutcome{err: errInvalidResponse}
+		}
+	}
 	if t.Test == "fail" {
 		return verifyOutcome{err: errInvalidResponse}
 	}
@@ -137,6 +146,12 @@ func (s *Server) verify(ctx context.Context, p verifyParams) verifyOutcome {
 func (s *Server) siteverify(f flavor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		// Only invalid secrets are throttled. Invalid tokens are normal: a site's
+		// backend relays whatever bots send, and must never be locked out for it.
+		if s.throttled(r, "secret") {
+			writeJSON(w, http.StatusTooManyRequests, format(f, verifyOutcome{err: errBadRequest}))
+			return
+		}
 		p, ok := parseVerify(r)
 		if !ok {
 			writeJSON(w, http.StatusOK, format(f, verifyOutcome{err: errBadRequest}))
@@ -156,6 +171,9 @@ func (s *Server) siteverify(f flavor) http.HandlerFunc {
 			}
 		}
 		out := s.verify(ctx, p)
+		if out.err == errInvalidSecret {
+			s.noteFailure(r, "secret")
+		}
 		if site := s.lookupSecret(p.Secret); site != nil {
 			if out.err == "" {
 				s.stats.Add(ctx, site.Name, stats.Verified)

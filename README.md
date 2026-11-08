@@ -103,6 +103,7 @@ Everything is processed on your server. Signals are reduced in the browser where
 - [Operations](docs/OPERATIONS.md)
 - [Privacy](docs/PRIVACY.md)
 - [Compatibility](docs/COMPATIBILITY.md)
+- [Threat model](docs/THREAT_MODEL.md)
 - [Signal register](docs/SIGNALS.md)
 - [Lab results](docs/LAB_RESULTS.md)
 - [Research report](docs/research/report.md) and [notes](docs/research/notes)

@@ -207,8 +207,16 @@ func TestKeyboardCheckboxIsFine(t *testing.T) {
 	}
 }
 
+// humanPace moves the server clock past the minimum answer time, as a person
+// would take that long to answer.
+func humanPace(s *Server) {
+	offset := time.Until(s.now()) + 2*time.Second
+	s.now = func() time.Time { return time.Now().Add(offset) }
+}
+
 func puzzleFor(t *testing.T, s *Server, ref string) []int {
 	t.Helper()
+	defer humanPace(s)
 	var pr puzzleRef
 	if err := s.puzBox.Open(ref, &pr); err != nil {
 		t.Fatal(err)
@@ -437,5 +445,43 @@ func TestWaitPathHoldsUntilMinimumDuration(t *testing.T) {
 	_, done := postJSON(t, ts.URL+"/v1/submit", map[string]any{"c": w["c"], "nonces": solvePow(t, w["pow"].(map[string]any))}, browserHeaders...)
 	if done["status"] != "pass" {
 		t.Fatalf("after the hold: %v", done)
+	}
+}
+
+func TestInstantAnswersCountAsWrong(t *testing.T) {
+	s, ts := newTest(t, softSite)
+	r := softPuzzle(t, ts)
+	ref := r["p"].(string)
+	var pr puzzleRef
+	if err := s.puzBox.Open(ref, &pr); err != nil {
+		t.Fatal(err)
+	}
+	raw, _, _ := s.store.Get(t.Context(), "pz:"+pr.ID)
+	ans, _ := puzzle.DecodeAnswer(raw)
+	// The right answer, but sooner than a person could give it.
+	if _, out := postJSON(t, ts.URL+"/v1/answer", map[string]any{"p": ref, "values": ans.Values}); out["status"] != "puzzle" {
+		t.Errorf("instant answer accepted: %v", out)
+	}
+}
+
+func TestBindClientRejectsOtherNetworks(t *testing.T) {
+	_, ts := newTest(t, strings.ReplaceAll(stdSite, "wait_fallback: true", "policy: {bind_client: true}"))
+	tokenFor := func() string {
+		ch, nonce := stdChallenge(t, ts)
+		r := submit(t, ts, ch, goodSignals(nonce), browserHeaders...)
+		return r["token"].(string)
+	}
+	verify := func(token, ip string) any {
+		return verifyForm(t, ts.URL+"/v1/siteverify", url.Values{"secret": {"secret_std_secret_std"}, "response": {token}, "remoteip": {ip}})["success"]
+	}
+	// httptest clients connect from 127.0.0.1.
+	if got := verify(tokenFor(), "127.0.0.99"); got != true {
+		t.Errorf("same /24 rejected: %v", got)
+	}
+	if got := verify(tokenFor(), "203.0.113.7"); got != false {
+		t.Errorf("other network accepted: %v", got)
+	}
+	if got := verify(tokenFor(), ""); got != true {
+		t.Errorf("without remoteip the token should verify: %v", got)
 	}
 }
