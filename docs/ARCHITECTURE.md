@@ -96,7 +96,7 @@ Image recognition grids are not used, because they are cheaply solved. The famil
 
 These measurements come from small samples, and the margins erode. All of them help against general AI agents, not against a solver built for one family: the kinetic shapes can be recovered by comparing frames. Families can be rotated per site with `puzzles`.
 
-The kinetic frames are rendered on the server, because a client renderer would need the shapes, which are the answer. They arrive as one PNG sprite sheet of whole frames, so there are no motion vectors to read, and CSS steps through it, so no script draws anything. Motion never starts by itself; it runs after Play and can be paused. Mean brightness is constant, to stay clear of flash thresholds, and people who prefer reduced motion are pointed to the alternative.
+The kinetic frames are rendered on the server, because a client renderer would need the shapes, which are the answer. They arrive as one PNG sprite sheet of whole frames, so there are no motion vectors to read, and CSS steps through it, so no script draws anything. The motion starts when the task opens, which only happens after a deliberate action, and can be paused (WCAG 2.2.2). For people whose system asks for reduced motion it stays still until Play. CSS alone handles this, so no script reads the preference. Mean brightness is constant, to stay clear of flash thresholds, and people who prefer reduced motion are pointed to the alternative.
 
 Each family has a keyboard path, answers stay on the server, and each puzzle allows one answer. Answers sooner than 1.2 s after a task appears count as wrong, since a person can't read and answer that fast.
 

@@ -31,6 +31,7 @@ export interface Strings {
   waiting: string;
   wrong: string;
   kinetic: string;
+  kineticAuto: string;
   play: string;
   pause: string;
   motionNote: string;
@@ -75,6 +76,7 @@ export const locales: Record<string, Strings> = {
     help: 'Help',
     privacy: 'Privacy',
     imprint: 'Imprint',
+    kineticAuto: 'Select every square in which a moving ring appears.',
   },
   de: {
     verifying: 'Überprüfung läuft',
@@ -109,6 +111,7 @@ export const locales: Record<string, Strings> = {
     help: 'Hilfe',
     privacy: 'Datenschutz',
     imprint: 'Impressum',
+    kineticAuto: 'Wähle jedes Feld, in dem ein sich bewegender Ring erscheint.',
   },
   fr: {
     verifying: 'Vérification en cours',
@@ -143,6 +146,7 @@ export const locales: Record<string, Strings> = {
     help: 'Aide',
     privacy: 'Confidentialité',
     imprint: 'Mentions légales',
+    kineticAuto: 'Sélectionnez chaque case où apparaît un anneau en mouvement.',
   },
   es: {
     verifying: 'Verificando',
@@ -177,6 +181,7 @@ export const locales: Record<string, Strings> = {
     help: 'Ayuda',
     privacy: 'Privacidad',
     imprint: 'Aviso legal',
+    kineticAuto: 'Selecciona cada casilla en la que aparezca un anillo en movimiento.',
   },
   pt: {
     verifying: 'Verificando',
@@ -211,6 +216,7 @@ export const locales: Record<string, Strings> = {
     help: 'Ajuda',
     privacy: 'Privacidade',
     imprint: 'Informações legais',
+    kineticAuto: 'Selecione cada quadrado em que aparece um anel em movimento.',
   },
   it: {
     verifying: 'Verifica in corso',
@@ -245,6 +251,7 @@ export const locales: Record<string, Strings> = {
     help: 'Aiuto',
     privacy: 'Privacy',
     imprint: 'Note legali',
+    kineticAuto: 'Seleziona ogni casella in cui compare un anello in movimento.',
   },
   nl: {
     verifying: 'Bezig met verifiëren',
@@ -279,6 +286,7 @@ export const locales: Record<string, Strings> = {
     help: 'Hulp',
     privacy: 'Privacy',
     imprint: 'Colofon',
+    kineticAuto: 'Selecteer elk vak waarin een bewegende ring verschijnt.',
   },
   pl: {
     verifying: 'Trwa weryfikacja',
@@ -313,6 +321,7 @@ export const locales: Record<string, Strings> = {
     help: 'Pomoc',
     privacy: 'Prywatność',
     imprint: 'Nota prawna',
+    kineticAuto: 'Zaznacz każde pole, w którym pojawia się poruszający się pierścień.',
   },
   cs: {
     verifying: 'Probíhá ověření',
@@ -347,6 +356,7 @@ export const locales: Record<string, Strings> = {
     help: 'Nápověda',
     privacy: 'Ochrana soukromí',
     imprint: 'Tiráž',
+    kineticAuto: 'Vyberte každé pole, ve kterém se objeví pohybující se kroužek.',
   },
   sv: {
     verifying: 'Verifierar',
@@ -381,6 +391,7 @@ export const locales: Record<string, Strings> = {
     help: 'Hjälp',
     privacy: 'Integritet',
     imprint: 'Om webbplatsen',
+    kineticAuto: 'Välj varje ruta där en rörlig ring visas.',
   },
   ru: {
     verifying: 'Идёт проверка',
@@ -415,6 +426,7 @@ export const locales: Record<string, Strings> = {
     help: 'Справка',
     privacy: 'Конфиденциальность',
     imprint: 'Правовая информация',
+    kineticAuto: 'Выберите все клетки, в которых появляется движущееся кольцо.',
   },
   uk: {
     verifying: 'Триває перевірка',
@@ -449,6 +461,7 @@ export const locales: Record<string, Strings> = {
     help: 'Довідка',
     privacy: 'Конфіденційність',
     imprint: 'Правова інформація',
+    kineticAuto: 'Виберіть кожну клітинку, у якій з\'являється рухоме кільце.',
   },
   tr: {
     verifying: 'Doğrulanıyor',
@@ -483,6 +496,7 @@ export const locales: Record<string, Strings> = {
     help: 'Yardım',
     privacy: 'Gizlilik',
     imprint: 'Künye',
+    kineticAuto: 'Hareketli bir halkanın göründüğü her kareyi seçin.',
   },
   ar: {
     verifying: 'جارٍ التحقق',
@@ -517,6 +531,7 @@ export const locales: Record<string, Strings> = {
     help: 'مساعدة',
     privacy: 'الخصوصية',
     imprint: 'بيانات قانونية',
+    kineticAuto: 'اختر كل مربع يظهر فيه حلقة متحركة.',
   },
   hi: {
     verifying: 'सत्यापन हो रहा है',
@@ -551,6 +566,7 @@ export const locales: Record<string, Strings> = {
     help: 'सहायता',
     privacy: 'गोपनीयता',
     imprint: 'कानूनी जानकारी',
+    kineticAuto: 'हर वह खाना चुनें जिसमें चलता हुआ छल्ला दिखे।',
   },
   id: {
     verifying: 'Sedang memverifikasi',
@@ -585,6 +601,7 @@ export const locales: Record<string, Strings> = {
     help: 'Bantuan',
     privacy: 'Privasi',
     imprint: 'Info hukum',
+    kineticAuto: 'Pilih setiap kotak yang memperlihatkan cincin bergerak.',
   },
   vi: {
     verifying: 'Đang xác minh',
@@ -619,6 +636,7 @@ export const locales: Record<string, Strings> = {
     help: 'Trợ giúp',
     privacy: 'Quyền riêng tư',
     imprint: 'Thông tin pháp lý',
+    kineticAuto: 'Chọn mọi ô có một vòng tròn chuyển động xuất hiện.',
   },
   zh: {
     verifying: '正在验证',
@@ -653,6 +671,7 @@ export const locales: Record<string, Strings> = {
     help: '帮助',
     privacy: '隐私',
     imprint: '法律信息',
+    kineticAuto: '选出所有出现移动圆环的方格。',
   },
   'zh-TW': {
     verifying: '正在驗證',
@@ -687,6 +706,7 @@ export const locales: Record<string, Strings> = {
     help: '說明',
     privacy: '隱私權',
     imprint: '法律資訊',
+    kineticAuto: '選出所有出現移動圓環的方格。',
   },
   ja: {
     verifying: '確認しています',
@@ -721,6 +741,7 @@ export const locales: Record<string, Strings> = {
     help: 'ヘルプ',
     privacy: 'プライバシー',
     imprint: '運営者情報',
+    kineticAuto: '動くリングが現れるマスをすべて選んでください。',
   },
   ko: {
     verifying: '확인하는 중',
@@ -755,6 +776,7 @@ export const locales: Record<string, Strings> = {
     help: '도움말',
     privacy: '개인정보',
     imprint: '법적 고지',
+    kineticAuto: '움직이는 고리가 나타나는 칸을 모두 선택하세요.',
   },
 };
 
