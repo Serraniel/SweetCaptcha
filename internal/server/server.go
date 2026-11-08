@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"strconv"
 	"strings"
 	"time"
 
@@ -199,10 +200,53 @@ func readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 func (s *Server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
 	want := []byte("Bearer " + s.cfg.Admin.Token)
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.throttled(r, "admin") {
+			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "rate-limited"})
+			return
+		}
 		if subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), want) != 1 {
+			s.noteFailure(r, "admin")
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
 		next(w, r)
+	}
+}
+
+// failureLimit is how many failed authentications an address may make in
+// failureWindow before it is refused.
+const (
+	failureLimit  = 20
+	failureWindow = 10 * time.Minute
+)
+
+func (s *Server) failureKey(r *http.Request, scope string) string {
+	addr := s.clientAddr(r)
+	if !addr.IsValid() {
+		return ""
+	}
+	return "fl:" + scope + ":" + s.ring.DailyPseudonym(addr.String(), s.now())
+}
+
+// throttled reports whether this address has failed too often. It fails open
+// when the store is unavailable, since the secret comparison still applies.
+func (s *Server) throttled(r *http.Request, scope string) bool {
+	key := s.failureKey(r, scope)
+	if key == "" {
+		return false
+	}
+	v, ok, err := s.store.Get(r.Context(), key)
+	if err != nil || !ok {
+		return false
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	return err == nil && n >= failureLimit
+}
+
+func (s *Server) noteFailure(r *http.Request, scope string) {
+	if key := s.failureKey(r, scope); key != "" {
+		if _, err := s.store.Incr(r.Context(), key, 1, failureWindow); err != nil {
+			slog.Warn("failure counter unavailable", "error", err)
+		}
 	}
 }

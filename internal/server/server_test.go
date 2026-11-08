@@ -461,3 +461,29 @@ func TestAdminRequiresToken(t *testing.T) {
 		t.Errorf("with token: %d", resp.StatusCode)
 	}
 }
+
+func TestInvalidSecretsAreThrottled(t *testing.T) {
+	_, ts := newTest(t, strictSite)
+	for range failureLimit {
+		verifyForm(t, ts.URL+"/siteverify", url.Values{"secret": {"wrong-secret-value"}, "response": {"x"}})
+	}
+	resp, err := http.PostForm(ts.URL+"/siteverify", url.Values{"secret": {strictPass}, "response": {"x"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("status %d after repeated invalid secrets", resp.StatusCode)
+	}
+}
+
+func TestInvalidTokensAreNotThrottled(t *testing.T) {
+	_, ts := newTest(t, strictSite)
+	for range failureLimit + 5 {
+		verifyForm(t, ts.URL+"/siteverify", url.Values{"secret": {strictPass}, "response": {"bogus"}})
+	}
+	token := strictToken(t, ts, "")
+	if m := verifyForm(t, ts.URL+"/siteverify", url.Values{"secret": {strictPass}, "response": {token}}); m["success"] != true {
+		t.Errorf("a site relaying bad tokens was locked out: %v", m)
+	}
+}

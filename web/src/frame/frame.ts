@@ -633,26 +633,30 @@ function kineticView(box: HTMLElement, p: PuzzlePublic): () => number[] {
 }
 
 function stackOrderView(box: HTMLElement, p: PuzzlePublic): () => number[] {
-  box.append(el('p', '', t.stackOrder));
   const stage = el('div', 'stage');
   stage.append(image(p.images[0]));
   box.append(stage);
-  let answer = -1;
-  const row = el('div', 'choices');
-  row.setAttribute('role', 'group');
-  row.setAttribute('aria-label', t.stackOrder);
-  for (let i = 0; i < (p.options ?? 0); i++) {
-    const b = el('button', 'choice', String(i + 1));
-    b.type = 'button';
-    b.setAttribute('aria-pressed', 'false');
-    b.addEventListener('click', () => {
-      answer = i;
-      row.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    });
-    row.append(b);
-  }
-  box.append(row);
-  return () => [answer];
+  const answers = [-1, -1];
+  [t.stackOrder, t.stackFront].forEach((label, q) => {
+    const id = `s${q}`;
+    const l = el('p', '', label);
+    l.id = id;
+    const row = el('div', 'choices');
+    row.setAttribute('role', 'group');
+    row.setAttribute('aria-labelledby', id);
+    for (let i = 0; i < (p.options ?? 0); i++) {
+      const b = el('button', 'choice', String(i + 1));
+      b.type = 'button';
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        answers[q] = i;
+        row.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      });
+      row.append(b);
+    }
+    box.append(l, row);
+  });
+  return () => answers;
 }
 
 function rotateView(box: HTMLElement, p: PuzzlePublic): () => number[] {

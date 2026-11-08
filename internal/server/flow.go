@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"regexp"
 	"time"
 
@@ -66,6 +69,8 @@ type tokenClaims struct {
 	Issued  int64    `json:"ia"`
 	Expires int64    `json:"x"`
 	Test    string   `json:"z,omitempty"`
+	// Net is a keyed pseudonym of the solver's network, for bind_client.
+	Net string `json:"n,omitempty"`
 }
 
 func randomID() string {
@@ -164,6 +169,26 @@ func (s *Server) handleChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	s.stats.Add(ctx, site.Name, stats.Issued)
 	writeJSON(w, http.StatusOK, challengeResponse{Challenge: sealed, Pow: view, Mode: site.Mode, Collect: collect})
+}
+
+// networkPseudonym returns a keyed hash of the address's /24 (IPv4) or /48 (IPv6).
+// It is sealed inside a token and never stored, so a fixed key does not link
+// anything across tokens.
+func (s *Server) networkPseudonym(addr netip.Addr) string {
+	if !addr.IsValid() {
+		return ""
+	}
+	bits := 48
+	if addr.Is4() {
+		bits = 24
+	}
+	prefix, err := addr.Prefix(bits)
+	if err != nil {
+		return ""
+	}
+	m := hmac.New(sha256.New, s.ring.Derive("bind", ""))
+	m.Write([]byte(prefix.String()))
+	return base64.RawURLEncoding.EncodeToString(m.Sum(nil)[:12])
 }
 
 // siteRate counts this site's challenges in the current minute. It is only kept
@@ -302,6 +327,9 @@ func (s *Server) issue(w http.ResponseWriter, r *http.Request, site *config.Site
 		ID: randomID(), SiteKey: site.SiteKey, Host: c.Host, Action: c.Action, CData: c.CData,
 		Score: score, Mode: string(site.Mode), Via: via, Reasons: reasons,
 		Issued: now.Unix(), Expires: now.Add(site.TokenTTL).Unix(),
+	}
+	if site.Policy.BindClient {
+		t.Net = s.networkPseudonym(s.clientAddr(r))
 	}
 	sealed, err := s.tokBox.Seal(t)
 	if err != nil {

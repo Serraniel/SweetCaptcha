@@ -22,6 +22,7 @@ Set `demo: false` in production. Each site needs its own `sitekey`, `secret` and
 | `limits.site_baseline_per_minute` | `0` (off) | Your site's normal challenges per minute. Above it, difficulty rises for everyone. |
 | `policy.shadow` | `false` | Records decisions without enforcing them. |
 | `policy.on_definitive` | `deny` | Or `puzzle`. |
+| `policy.bind_client` | `false` | Ties each token to the /24 (IPv4) or /48 (IPv6) network that earned it. Send `remoteip` to siteverify to enforce it. Stops solver farms handing tokens over; visitors who change network within the token lifetime fail. |
 | `policy.score_only` | `false` | Never show a checkbox or task, like reCAPTCHA v3: every request gets a token, and the site must reject low scores itself. Use it only where the backend checks `score`, or a bot gets a valid token. |
 | `limits` | 30 and 300 per minute; 5 waits per hour | Above soft, difficulty rises. Above hard, requests get HTTP 429. `wait_per_hour` caps the wait path per address, and shared addresses share the cap. |
 | `puzzles` | `line-trace`, `gap-rings`, `kinetic`, `stack-order` | `rotate-match` is also available. Disable a family if its solve rate climbs. |

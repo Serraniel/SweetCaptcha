@@ -89,7 +89,7 @@ Image recognition grids are not used, because they are cheaply solved. The famil
 | Family | Task | Why it is hard for AI |
 |---|---|---|
 | `kinetic` | Press Play, then select every cell where a moving ring appears | The shapes exist only in motion: every frame is plain noise. Vision models scored near 0% on such stimuli, and agents act on screenshots. |
-| `stack-order` | Name the shape at the very back of an overlapping pile | Overlap and depth judgements: models 0-20%, people about 100% |
+| `stack-order` | Name the shapes at the very back and the very front of an overlapping ring of six | Overlap and depth judgements: models 0-20%, people about 100% |
 | `line-trace` | Follow two lines through crossings of one colour | Line following: about 27% for a strong model against 14% chance |
 | `gap-rings` | Select every ring with a gap | Fine localisation |
 | `rotate-match` | Turn shapes to match | Weakest against few-shot prompting; off by default |
@@ -98,7 +98,7 @@ These measurements come from small samples, and the margins erode. All of them h
 
 The kinetic frames are rendered on the server, because a client renderer would need the shapes, which are the answer. They arrive as one PNG sprite sheet of whole frames, so there are no motion vectors to read, and CSS steps through it, so no script draws anything. Motion never starts by itself; it runs after Play and can be paused. Mean brightness is constant, to stay clear of flash thresholds, and people who prefer reduced motion are pointed to the alternative.
 
-Each family has a keyboard path, answers stay on the server, and each puzzle allows one answer.
+Each family has a keyboard path, answers stay on the server, and each puzzle allows one answer. Answers sooner than 1.2 s after a task appears count as wrong, since a person can't read and answer that fast.
 
 None of them suits everyone, so the **wait path** offers a longer computation instead. It is a trade-off: a bot that reaches it can pay with CPU, which a task would not allow. To limit that, it is closed to any client with contradictions or automation markers, capped per address, and reported as `via: wait` with a lower score. Sites with high-value actions can reject `via: wait` or set `wait_fallback: false`, and should then offer another accessible route. A site can also show a support link.
 

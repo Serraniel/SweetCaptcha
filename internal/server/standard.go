@@ -226,8 +226,13 @@ type puzzleRef struct {
 	Action  string `json:"a,omitempty"`
 	CData   string `json:"d,omitempty"`
 	Session string `json:"e"`
+	Issued  int64  `json:"ia"`
 	Expires int64  `json:"x"`
 }
+
+// minAnswerTime is the least time a person needs to read and answer a task.
+// Faster answers count as wrong, with no reason given.
+const minAnswerTime = 1200 * time.Millisecond
 
 func (d *standard) startPuzzle(w http.ResponseWriter, r *http.Request, s *Server, site *config.Site, c *claims, ev evidence) {
 	ctx := r.Context()
@@ -248,7 +253,7 @@ func (d *standard) startPuzzle(w http.ResponseWriter, r *http.Request, s *Server
 		writeJSON(w, http.StatusInternalServerError, submitResponse{Status: "retry"})
 		return
 	}
-	ref := puzzleRef{ID: randomID(), SiteKey: site.SiteKey, Host: c.Host, Action: c.Action, CData: c.CData, Session: c.Session, Expires: s.now().Add(puzzleTTL).Unix()}
+	ref := puzzleRef{ID: randomID(), SiteKey: site.SiteKey, Host: c.Host, Action: c.Action, CData: c.CData, Session: c.Session, Issued: s.now().UnixMilli(), Expires: s.now().Add(puzzleTTL).Unix()}
 	encoded, err := puzzle.EncodeAnswer(ans)
 	if err == nil {
 		err = s.store.Set(ctx, "pz:"+ref.ID, encoded, puzzleTTL)
@@ -317,7 +322,11 @@ func (d *standard) answer(w http.ResponseWriter, r *http.Request, s *Server) {
 		return
 	}
 	c := &claims{SiteKey: ref.SiteKey, Host: ref.Host, Action: ref.Action, CData: ref.CData, Session: ref.Session}
-	if puzzle.Check(ans, req.Values) {
+	humanPaced := s.now().Sub(time.UnixMilli(ref.Issued)) >= minAnswerTime
+	if !humanPaced {
+		s.stats.Add(ctx, site.Name, "answer_too_fast")
+	}
+	if humanPaced && puzzle.Check(ans, req.Values) {
 		s.stats.Add(ctx, site.Name, stats.PuzzleOK)
 		s.issue(w, r, site, c, 1-risk.P(ev.LogOdds-creditPuzzle), "puzzle", ev.Hits)
 		return

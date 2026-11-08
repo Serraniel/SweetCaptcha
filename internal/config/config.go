@@ -124,6 +124,9 @@ type Policy struct {
 	// ScoreOnly never shows a checkbox or task. Every request gets a token whose
 	// score the site must check, as with reCAPTCHA v3. Only for sites that do check it.
 	ScoreOnly bool `yaml:"score_only"`
+	// BindClient ties each token to the network that earned it. When the site
+	// sends remoteip to siteverify, it must be in the same /24 (IPv4) or /48 (IPv6).
+	BindClient bool `yaml:"bind_client"`
 }
 
 // Limits rate-limits challenge issuance per pseudonymised client address.

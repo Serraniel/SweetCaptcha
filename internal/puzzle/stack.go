@@ -8,20 +8,23 @@ import (
 )
 
 const (
-	stackShapes   = 5
+	stackShapes   = 6
 	stackW        = 360
 	stackH        = 260
 	minOverlap    = 140 // pixels shared before an occlusion counts as visible
-	minVisible    = 1100
-	stackAttempts = 300
+	minVisible    = 1300
+	minClearance  = 13 // room for the number tag inside the visible part
+	stackAttempts = 100
 )
 
 // stackOrder draws overlapping outlined shapes in one colour. Each shape covers
 // the outlines behind it, and the task is to name the one at the very back.
 // Models measured 0-20% on such overlap and depth judgements, against about 100%
-// for people. The generator accepts a layout only if the answer is unique from
-// what is visible: the back shape hides nothing, and every other shape hides part
-// of an earlier one.
+// for people. Two questions, the back and the front shape, make a blind guess
+// succeed 1 time in 30. The generator accepts a layout only if both answers are
+// unique from what is visible: the back shape hides nothing and every other
+// shape hides part of an earlier one; the front shape is hidden by nothing and
+// every other shape is partly hidden by a later one.
 func stackOrder(r *rand.Rand) (Public, Answer, error) {
 	var shapes [][][2]float64
 	var masks [][]bool
@@ -41,7 +44,7 @@ func stackOrder(r *rand.Rand) (Public, Answer, error) {
 	}
 	labels := r.Perm(stackShapes)
 	for i := range shapes {
-		x, y := labelPoint(masks, i)
+		x, y, _ := labelPoint(masks, i)
 		c.disc(x, y, 11, color3)
 		c.digit(labels[i]+1, x-4, y-7, 7, 2, paperInk)
 	}
@@ -50,25 +53,53 @@ func stackOrder(r *rand.Rand) (Public, Answer, error) {
 	if err != nil {
 		return Public{}, Answer{}, err
 	}
-	return Public{Family: StackOrder, Images: []string{url}, Options: stackShapes},
-		Answer{Family: StackOrder, Values: []int{labels[0]}}, nil
+	return Public{Family: StackOrder, Images: []string{url}, Options: stackShapes, Markers: 2},
+		Answer{Family: StackOrder, Values: []int{labels[0], labels[stackShapes-1]}}, nil
 }
 
+// stackLayout places the shapes on a ring, so that each overlaps only its two
+// neighbours. The drawing order rises from the back shape to the front shape
+// along both arcs of the ring, interleaved at random. Then every shape except the
+// back one covers an earlier neighbour, and every shape except the front one is
+// covered by a later neighbour, which makes both answers unique by construction.
+// stackValid still checks each layout, including that every shape stays visible.
 func stackLayout(r *rand.Rand) ([][][2]float64, [][]bool) {
-	shapes := make([][][2]float64, stackShapes)
-	masks := make([][]bool, stackShapes)
-	for i := range stackShapes {
-		cx := stackW/2 + (r.Float64()-0.5)*170
-		cy := stackH/2 + (r.Float64()-0.5)*90
-		radius := 48 + r.Float64()*26
-		n := 5 + r.IntN(3)
-		angles := make([]float64, n)
-		for k := range n {
-			angles[k] = 2 * math.Pi * (float64(k) + r.Float64()*0.6) / float64(n)
+	n := stackShapes
+	start := r.Float64() * 2 * math.Pi
+	centres := make([][2]float64, n)
+	for k := range n {
+		a := start + 2*math.Pi*float64(k)/float64(n) + (r.Float64()-0.5)*0.25
+		centres[k] = [2]float64{stackW/2 + math.Cos(a)*90, stackH/2 + math.Sin(a)*58}
+	}
+	back := r.IntN(n)
+	front := (back + 2 + r.IntN(n-3)) % n
+	var arcA, arcB []int
+	for k := (back + 1) % n; k != front; k = (k + 1) % n {
+		arcA = append(arcA, k)
+	}
+	for k := (back + n - 1) % n; k != front; k = (k + n - 1) % n {
+		arcB = append(arcB, k)
+	}
+	order := []int{back}
+	for len(arcA) > 0 || len(arcB) > 0 {
+		if len(arcB) == 0 || (len(arcA) > 0 && r.IntN(2) == 0) {
+			order, arcA = append(order, arcA[0]), arcA[1:]
+		} else {
+			order, arcB = append(order, arcB[0]), arcB[1:]
 		}
-		pts := make([][2]float64, n)
-		for k, a := range angles {
-			rr := radius * (0.75 + r.Float64()*0.25)
+	}
+	order = append(order, front)
+
+	shapes := make([][][2]float64, n)
+	masks := make([][]bool, n)
+	for i, pos := range order {
+		cx, cy := centres[pos][0], centres[pos][1]
+		radius := 62 + r.Float64()*6
+		vertices := 5 + r.IntN(3)
+		pts := make([][2]float64, vertices)
+		for k := range vertices {
+			a := 2 * math.Pi * (float64(k) + r.Float64()*0.6) / float64(vertices)
+			rr := radius * (0.8 + r.Float64()*0.2)
 			pts[k] = [2]float64{cx + math.Cos(a)*rr, cy + math.Sin(a)*rr}
 		}
 		shapes[i] = pts
@@ -134,8 +165,24 @@ func stackValid(masks [][]bool) bool {
 	if !backCovered {
 		return false
 	}
+	// Every shape but the front one must be partly covered by a later shape.
+	for i := 0; i < len(masks)-1; i++ {
+		covered := false
+		for j := i + 1; j < len(masks); j++ {
+			if overlap(masks[i], masks[j]) >= minOverlap {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			return false
+		}
+	}
 	for i := range masks {
 		if visible(masks, i) < minVisible {
+			return false
+		}
+		if _, _, clearance := labelPoint(masks, i); clearance < minClearance {
 			return false
 		}
 	}
@@ -143,7 +190,7 @@ func stackValid(masks [][]bool) bool {
 }
 
 // labelPoint finds a visible point of shape i far from any edge, for its number.
-func labelPoint(masks [][]bool, i int) (float64, float64) {
+func labelPoint(masks [][]bool, i int) (float64, float64, int) {
 	isVisible := func(x, y int) bool {
 		if x < 0 || y < 0 || x >= stackW || y >= stackH || !masks[i][y*stackW+x] {
 			return false
@@ -171,5 +218,5 @@ func labelPoint(masks [][]bool, i int) (float64, float64) {
 			}
 		}
 	}
-	return float64(bestX), float64(bestY)
+	return float64(bestX), float64(bestY), best
 }
