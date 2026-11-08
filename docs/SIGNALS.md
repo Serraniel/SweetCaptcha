@@ -71,5 +71,4 @@ Weights are log-likelihood ratios: positive values raise suspicion and negative 
 | `trap_hit` | protocol | +4.0 | A control invisible to people and to assistive technology was activated. |
 | `proto_no_signals` | protocol | +5.0 | The collector did not run or returned an invalid document. |
 | `proto_too_fast` | protocol | +1.5 | Proof of work finished faster than JavaScript can run it. |
-| `obs_cdp` | environment | +0.0 | Observed only, with no score effect: a console serialization side effect that DevTools users also trigger. |
 | `obs_tor` | network | +0.0 | Observed only, with no score effect: a Tor exit. Tor is not treated as evidence of a bot. |

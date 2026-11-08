@@ -93,7 +93,6 @@ var Rules = []Rule{
 	{"trap_hit", GroupProtocol, 4, "A control invisible to people and to assistive technology was activated."},
 	{"proto_no_signals", GroupProtocol, 5, "The collector did not run or returned an invalid document."},
 	{"proto_too_fast", GroupProtocol, 1.5, "Proof of work finished faster than JavaScript can run it."},
-	{"obs_cdp", GroupEnvironment, 0, "Observed only, with no score effect: a console serialization side effect that DevTools users also trigger."},
 	{"obs_tor", GroupNetwork, 0, "Observed only, with no score effect: a Tor exit. Tor is not treated as evidence of a bot."},
 }
 
@@ -243,9 +242,6 @@ func evalClient(in Input, claim UAClaim, fire func(string)) {
 	}
 	if s.Trap {
 		fire("trap_hit")
-	}
-	if s.CDP {
-		fire("obs_cdp")
 	}
 	if s.Hash.UA != KeyedHash(in.Nonce, in.Header.Get("User-Agent")) {
 		fire("header_ua_mismatch")

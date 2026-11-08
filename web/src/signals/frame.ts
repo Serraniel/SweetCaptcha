@@ -197,17 +197,6 @@ function installTrap(): void {
 }
 installTrap();
 
-function cdpObserved(): boolean {
-  // Observed only and never scored: DevTools triggers it too, and its reliability
-  // after the 2025 V8 changes is disputed.
-  let hit = false;
-  const e = new Error();
-  Object.defineProperty(e, 'name', { get() { hit = true; return 'Error'; }, configurable: true });
-  // eslint-disable-next-line no-console
-  console.debug(e);
-  return hit;
-}
-
 // Checkbox evidence, gathered inside the frame from the moment the box appears.
 // A driver usually sends one move onto the target and clicks; a person's pointer
 // arrives over several moves. Keyboard activation reports detail 0 and is fine.
@@ -262,7 +251,6 @@ window.__sweetcaptchaCollect = async (nonce, workerUrl, page) => {
       ...safe(gpu, { gpu: 'none', gpuApi: 'unknown' }),
     },
     trap: trapped,
-    cdp: safe(cdpObserved, false),
     beh: page.behaviour ?? null,
   };
 };
