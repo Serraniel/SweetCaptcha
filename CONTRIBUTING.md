@@ -9,7 +9,7 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org). Rele
 | `feat!:` or a `BREAKING CHANGE:` footer | Major version (minor before 1.0) |
 | `docs:`, `chore:`, `ci:`, `test:` | No release on their own |
 
-Releases are betas for now: `release-please-config.json` uses pre-release versioning, so each release becomes the next `0.1.0-beta.N` and is marked as a pre-release. For the first final release, set `"release-as": "0.1.0"` and remove `prerelease` and `versioning`. Pre-releases tag images `beta`; only final releases move `latest`.
+Releases below 1.0 are betas. Versions follow semantic versioning as 0.y.z: a feature bumps the minor version, a fix the patch, and a breaking change also bumps the minor version while below 1.0. Every 0.x release is marked as a pre-release on GitHub, and its images get the `beta` tag. `latest` only moves from 1.0 on; for that release, remove `prerelease` from `release-please-config.json`.
 
 ## Local checks
 
