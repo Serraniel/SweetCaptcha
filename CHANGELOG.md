@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.1...v0.1.2) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deps:** Bump golang ([#79](https://github.com/Serraniel/SweetCaptcha/issues/79)) ([779ac5c](https://github.com/Serraniel/SweetCaptcha/commit/779ac5cb3c6fa5cbea06719c56f0a60148b576ce))
+* **deps:** Bump golang.org/x/crypto ([#78](https://github.com/Serraniel/SweetCaptcha/issues/78)) ([c3b21de](https://github.com/Serraniel/SweetCaptcha/commit/c3b21de659296dc4c9eec4dab29f0dddfce531e8))
+
 ## [0.1.1](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.0-beta.1...v0.1.1) (2026-11-08)
 
 
