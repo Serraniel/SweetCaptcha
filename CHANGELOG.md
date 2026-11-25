@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.2...v0.1.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* **deps:** Bump the docker-images group with 2 updates ([#82](https://github.com/Serraniel/SweetCaptcha/issues/82)) ([2b9f48d](https://github.com/Serraniel/SweetCaptcha/commit/2b9f48da91de7e3d8885d27278ccd5f461b478f7))
+
 ## [0.1.2](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.1...v0.1.2) (2026-11-18)
 
 
