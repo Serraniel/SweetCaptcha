@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The release workflow dispatches CI on release-please's branch, because PRs it
+  # opens with the workflow token do not trigger pull_request runs.
+  workflow_dispatch:
 
 permissions:
   contents: read
