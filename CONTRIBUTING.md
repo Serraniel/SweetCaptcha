@@ -28,3 +28,7 @@ go test -tags strictonly ./internal/server ./internal/config
 - Absence of a signal is not evidence, unless the absence is itself a contradiction. Privacy tools must not be treated as bot evidence.
 - Behaviour alone may escalate, but it must never deny.
 - Add a lab scenario when you add a rule for a new attacker tier.
+
+## Security scans
+
+The `Security` workflow runs `govulncheck` and `npm audit` daily at 04:00 UTC, on every change, and on demand. A failing job means a known vulnerability affects the project. Dependabot opens security update PRs for vulnerable dependencies; treat them as security fixes.

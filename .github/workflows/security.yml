@@ -1,0 +1,42 @@
+name: Security
+
+# Vulnerability scans. They run daily before the maintenance agent, on every
+# change, and on demand. A failing job means a known vulnerability affects the
+# project; the job log names it.
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      # Reports only vulnerabilities in code the binary actually reaches.
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 -tags strictonly ./...
+
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Widget dependencies (shipped)
+        run: npm audit --omit=dev --audit-level=low
+        working-directory: web
+      # The lab is test-only and never shipped, so its findings do not fail the job.
+      - name: Lab dependencies (test only)
+        run: npm audit --audit-level=low || echo "::warning::lab dependencies have known vulnerabilities; see the log"
+        working-directory: lab
