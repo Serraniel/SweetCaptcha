@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.3...v0.1.4) (2026-11-28)
+
+
+### Bug Fixes
+
+* raise the weight of a Chromium claim without TLS GREASE ([#88](https://github.com/Serraniel/SweetCaptcha/issues/88)) ([b9bab9c](https://github.com/Serraniel/SweetCaptcha/commit/b9bab9c33cf8e6a4951b99cc318ed81ad404bf40)), closes [#87](https://github.com/Serraniel/SweetCaptcha/issues/87)
+
 ## [0.1.3](https://github.com/Serraniel/SweetCaptcha/compare/v0.1.2...v0.1.3) (2026-11-25)
 
 
