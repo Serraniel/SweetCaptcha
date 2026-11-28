@@ -71,7 +71,7 @@ var Rules = []Rule{
 	{"env_software_gpu", GroupEnvironment, 1.2, "Software rendering. Weak alone, since VMs and remote desktops also do this."},
 	{"env_zero_screen", GroupEnvironment, 1.5, "Zero-sized screen or window."},
 	{"env_no_languages", GroupEnvironment, 1, "`navigator.languages` is empty."},
-	{"net_tls_no_grease", GroupNetwork, 2.5, "A Chromium claim whose TLS handshake lacks GREASE values."},
+	{"net_tls_no_grease", GroupNetwork, 3.5, "A Chromium claim whose TLS handshake lacks GREASE values."},
 	{"net_tls_browser_mismatch", GroupNetwork, 2.5, "The TLS handshake does not fit any browser (no HTTP/2 or no TLS 1.3)."},
 	{"net_datacenter", GroupNetwork, 1, "The address is in a cloud or hosting range. VPN users also match this."},
 	{"net_velocity", GroupNetwork, 1.5, "Many challenges from one address in a short time."},
