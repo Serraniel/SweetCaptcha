@@ -49,7 +49,7 @@ Weights are log-likelihood ratios: positive values raise suspicion and negative 
 | `env_software_gpu` | environment | +1.2 | Software rendering. Weak alone, since VMs and remote desktops also do this. |
 | `env_zero_screen` | environment | +1.5 | Zero-sized screen or window. |
 | `env_no_languages` | environment | +1.0 | `navigator.languages` is empty. |
-| `net_tls_no_grease` | network | +2.5 | A Chromium claim whose TLS handshake lacks GREASE values. |
+| `net_tls_no_grease` | network | +3.5 | A Chromium claim whose TLS handshake lacks GREASE values. |
 | `net_tls_browser_mismatch` | network | +2.5 | The TLS handshake does not fit any browser (no HTTP/2 or no TLS 1.3). |
 | `net_datacenter` | network | +1.0 | The address is in a cloud or hosting range. VPN users also match this. |
 | `net_velocity` | network | +1.5 | Many challenges from one address in a short time. |
